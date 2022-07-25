@@ -1,6 +1,7 @@
 function key(prop, val) {
-    // return prop;
-    return `${({}).toString.call(val)}`;
+    const proto = `${({}).toString.call(val)}`;
+    return prop;  // "ownerDocument"
+    return proto; // "[object HTMLDocument]"
 }
 
 function prepareCB(tree = {}) {

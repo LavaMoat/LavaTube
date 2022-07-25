@@ -1,0 +1,39 @@
+<html>
+    <head>
+        <script src="https://unpkg.com/treeify/treeify.js"></script>
+
+        <script src="../walk.js"></script>
+        <script src="../tree.js"></script>
+
+        <script>
+            (function(){
+                const src = location.search.substr(1) + '.js';
+                const script = document.createElement('script');
+                script.src = src;
+                document.head.appendChild(script);
+            }());
+        </script>
+    </head>
+    <body>
+        <b>demos:</b>
+
+        <li><a href="?attached-dom-node">attached-dom-node</a></li>
+        <li><a href="?dom-node-event-target">dom-node-event-target</a></li>
+        <li><a href="?new-unattached-dom-node-with-attribute">new-unattached-dom-node-with-attribute</a></li>
+        <li><a href="?new-unattached-dom-node-with-children">new-unattached-dom-node-with-children</a></li>
+        <li><a href="?new-unattached-dom-node">new-unattached-dom-node</a></li>
+
+        <br>
+
+        <b>nesting level:</b> <input style="width: 30px" id="limit">
+
+        <br>
+
+        <script>
+            limit.value = localStorage.limit || 5;
+            limit.onchange = () => {
+                localStorage.limit = limit.value;
+            }
+        </script>
+    </body>
+</html>

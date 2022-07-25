@@ -22,7 +22,7 @@ function shouldWalk(src, values, limit) {
     if (src === null || typeof src !== 'object') {
         return false;
     }
-    if (values.slice(0, -1).includes(src)) {
+    if (values.includes(src)) {
         return false;
     }
     return true;
