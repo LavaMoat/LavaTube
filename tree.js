@@ -1,6 +1,10 @@
-function tree(src, dst, limit = 10000) {
-    const tree = {};
-    walk(src, dst, (val, dst, path) => {
+function key(prop, val) {
+    // return prop;
+    return `${({}).toString.call(val)}`;
+}
+
+function prepareCB(tree = {}) {
+    return function cb(val, dst, path) {
         if (val === dst) {
             let subtree = tree;
             for (let i =  0; i < path.length; i++) {
@@ -10,6 +14,11 @@ function tree(src, dst, limit = 10000) {
                 subtree = subtree[path[i]];
             }
         }
-    }, (prop, val) => `${({}).toString.call(val)}`, limit);
+    }
+}
+
+function tree(src, dst, limit) {
+    const tree = {};
+    walk(src, dst, {limit, key, cb: prepareCB(tree)});
     return tree;
 }
