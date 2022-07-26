@@ -12,7 +12,7 @@ check out the [demo](./demo)
 this property is owned by `Node` prototype, therefore anyone with access to a decedent of `Node` can access it.
 it's hard telling all the options to get a hold on an object that its prototype is `Node`, which makes this game tricky.
 
-some example can be found in this [MDN doc](https://developer.mozilla.org/en-US/docs/Web/API/Node):
+might be a comprehensive list though: [doc]([https://developer.mozilla.org/en-US/docs/Web/API/Node](https://dom.spec.whatwg.org/#concept-node)):
 
 ```javascript
 doc = 
