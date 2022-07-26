@@ -1,6 +1,30 @@
-const ignores = ['__proto__'];
+function shouldIgnore(prop, obj, values) {
+    // no reason to try climbing through __proto__ which throws
+    // error if we already do that by using Object.getPrototypeOf
+    function shouldIgnoreProtoProperty() {
+        return prop === '__proto__';
+    }
 
-const cache = new Map();
+    // when trying to access an SVGLength value property of an SVG node that is
+    // not attached to DOM, you get an error - we avoid that here
+    function shouldIgnoreSvgLengthValue() {
+        if (prop !== 'value' || ({}).toString.call(obj) !== '[object SVGLength]') {
+            return false;
+        }
+        for (let i = 0; i < values.length; i++) {
+            const value = values[i];
+            if (value?.isConnected) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    return (
+        shouldIgnoreProtoProperty() ||
+        shouldIgnoreSvgLengthValue()
+    );
+}
 
 function handleOpts(opts = {}) {
     if (typeof opts.cb !== 'function') {
@@ -15,18 +39,20 @@ function handleOpts(opts = {}) {
     return opts;
 }
 
-function shouldWalk(src, values, limit) {
+function shouldWalk(obj, values, limit) {
     if (limit === 0) {
         return false;
     }
-    if (src === null || typeof src !== 'object') {
+    if (obj === null || typeof obj !== 'object') {
         return false;
     }
-    if (values.includes(src)) {
+    if (values.includes(obj)) {
         return false;
     }
     return true;
 }
+
+const cache = new Map();
 
 function getAllPropsFromCache(obj) {
     let ownProps = cache.get(obj);
@@ -47,23 +73,23 @@ function getAllProps(obj, props = []) {
     return getAllProps(Object.getPrototypeOf(obj), props);
 }
 
-function walk(src, dst, opts = {}, keys = [], values = []) {
+function walk(obj, dst, opts = {}, keys = [], values = []) {
     const {cb, key, limit} = handleOpts(opts);
-    if (!shouldWalk(src, values, limit)) {
+    if (!shouldWalk(obj, values, limit)) {
         return;
     }
 
-    const props = getAllProps(src);
+    const props = getAllProps(obj);
     for (let i = 0; i < props.length; i++) {
         const prop = props[i];
-        if (ignores.includes(prop)) {
+        if (shouldIgnore(prop, obj, values)) {
             continue;
         }
 
-        const val = src[prop];
+        const val = obj[prop];
 
         const newKeys = [...keys, key(prop, val)];
-        const newValues = [...values, src];
+        const newValues = [...values, obj];
         const newOpts = {cb, key, limit: limit-1};
 
         walk(val, dst, newOpts, newKeys, newValues);
