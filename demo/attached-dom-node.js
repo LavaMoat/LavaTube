@@ -1,6 +1,8 @@
 (function(){
     setTimeout(() => {
-        const t = tree(document.scripts[1], window, parseInt(limit.value));
+        const a = {}
+        a.b = a;
+        const t = tree(a, a, parseInt(limit.value));
         console.log(treeify.asTree(t));
     });
 }());
