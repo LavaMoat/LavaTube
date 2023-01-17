@@ -1,4 +1,18 @@
 function shouldIgnore(prop, obj, keys, values) {
+    // ignore properties that when accessed return a promise
+    // so that walker won't have to modify itself to async-await
+    function shouldIgnoreAsyncProps() {
+        if (prop === 'ready' || prop === 'loading') {
+            if (ServiceWorkerContainer.prototype === obj) {
+                return true;
+            }
+            if (Object.getPrototypeOf(document.fonts) === obj) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // some properties found on __proto__ can only be accessed
     // via an instance of the prototype rather than the prototype itself
     function shouldIgnoreProtoProperty() {
@@ -32,8 +46,9 @@ function shouldIgnore(prop, obj, keys, values) {
     }
 
     return (
-        shouldIgnoreProtoProperty() ||
-        shouldIgnoreSvgLengthValue()
+        shouldIgnoreAsyncProps() ||
+        shouldIgnoreSvgLengthValue() ||
+        shouldIgnoreProtoProperty()
     );
 }
 
