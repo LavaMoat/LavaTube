@@ -1,8 +1,33 @@
-function shouldIgnore(prop, obj, values) {
-    // no reason to try climbing through __proto__ which throws
-    // error if we already do that by using Object.getPrototypeOf
+function shouldIgnore(prop, obj, keys, values) {
+    // ignore properties that when accessed return a promise
+    // so that walker won't have to modify itself to async-await
+    function shouldIgnoreAsyncProps() {
+        if (prop === 'ready' || prop === 'loading') {
+            if (ServiceWorkerContainer.prototype === obj) {
+                return true;
+            }
+            if (Object.getPrototypeOf(document.fonts) === obj) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // some properties found on __proto__ can only be accessed
+    // via an instance of the prototype rather than the prototype itself
     function shouldIgnoreProtoProperty() {
-        return prop === '__proto__';
+        if (keys[keys.length - 1] !== '__proto__') {
+            return false;
+        }
+        try {
+            obj[prop];
+            return false;
+        } catch (e) {
+            if (e.message !== 'Illegal invocation') {
+                throw new Error('Unexpected error thrown in walker:', e);
+            }
+        }
+        return true;
     }
 
     // when trying to access an SVGLength value property of an SVG node that is
@@ -21,8 +46,9 @@ function shouldIgnore(prop, obj, values) {
     }
 
     return (
-        shouldIgnoreProtoProperty() ||
-        shouldIgnoreSvgLengthValue()
+        shouldIgnoreAsyncProps() ||
+        shouldIgnoreSvgLengthValue() ||
+        shouldIgnoreProtoProperty()
     );
 }
 
@@ -82,7 +108,7 @@ function walk(obj, dst, opts = {}, keys = [], values = []) {
     const props = getAllProps(obj);
     for (let i = 0; i < props.length; i++) {
         const prop = props[i];
-        if (shouldIgnore(prop, obj, values)) {
+        if (shouldIgnore(prop, obj, keys, values)) {
             continue;
         }
 
