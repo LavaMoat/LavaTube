@@ -1,11 +1,11 @@
-function key(prop, val) {
+function key(prop, val) { // customize aggregation
     const proto = `${({}).toString.call(val)}`;
     return prop;  // "ownerDocument"
     return proto; // "[object HTMLDocument]"
 }
 
-function prepareCB(tree = {}) {
-    return function cb(val, dst, path) {
+function tree(src, dst, limit) {
+    function cb(val, dst, path) {
         if (val === dst) {
             let subtree = tree;
             for (let i =  0; i < path.length; i++) {
@@ -16,10 +16,8 @@ function prepareCB(tree = {}) {
             }
         }
     }
-}
 
-function tree(src, dst, limit) {
     const tree = {};
-    walk(src, dst, {limit, key, cb: prepareCB(tree)});
+    walk(src, dst, {limit, key, cb});
     return tree;
 }
