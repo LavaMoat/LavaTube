@@ -1,3 +1,5 @@
+const walk = require('./walk');
+
 function key(prop, val) { // customize aggregation
     const proto = `${({}).toString.call(val)}`;
     return prop;  // "ownerDocument"
@@ -21,3 +23,5 @@ function tree(src, dst, limit) {
     walk(src, dst, {limit, key, cb});
     return tree;
 }
+
+module.exports = tree;

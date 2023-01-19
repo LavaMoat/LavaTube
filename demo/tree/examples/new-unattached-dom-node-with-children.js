@@ -1,4 +1,5 @@
 (function(){
+    const tree = require('./tree');
     const a = document.createElement('a');
     a.innerHTML = '<x></x>';
     setTimeout(() => {
