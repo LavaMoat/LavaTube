@@ -15,24 +15,28 @@ function shouldWalk(obj, values, limit) {
     return true;
 }
 
-function walk(obj, dst, opts = {}, keys = [], values = []) {
-    const {cb, key, limit} = options(opts);
+function walk(obj, cb, opts = {}, keys = [], values = []) {
+    const {key, limit} = options(opts);
     if (!shouldWalk(obj, values, limit)) {
-        return;
+        return false;
     }
     const props = getAllProps(obj);
     for (let i = 0; i < props.length; i++) {
         const prop = props[i];
-        if (shouldIgnore(prop, obj, keys, values)) {
+        if (shouldIgnore(prop, obj, values)) {
             continue;
         }
+        let stop;
         const val = obj[prop];
         const newKeys = [...keys, key(prop, val)];
         const newValues = [...values, obj];
-        const newOpts = {cb, key, limit: limit - 1};
-        walk(val, dst, newOpts, newKeys, newValues);
-        cb(val, dst, newKeys);
+        const newOpts = {key, limit: limit - 1};
+        stop = walk(val, cb, newOpts, newKeys, newValues);
+        if (stop) return true;
+        stop = cb(val, newKeys);
+        if (stop) return true;
     }
+    return false;
 }
 
 module.exports = walk;

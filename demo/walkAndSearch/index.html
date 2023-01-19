@@ -1,0 +1,60 @@
+<html>
+    <head>
+        <script>
+            top.modules = {};
+            function srcToModule(src) {
+                const parts = src.split('/');
+                const module = './' + parts[parts.length - 1].split('.js')[0];
+                return module;
+            }
+            function require(src) {
+                return top.modules[srcToModule(src)].exports;
+            }
+            async function load(src) {
+                const res = await fetch(src);
+                let js = await res.text();
+                const script = document.createElement('script');
+                script.textContent = `
+                top.modules['${srcToModule(src)}'] = (function(){
+                    const module = {};
+                    ${js}
+                    return module;
+                }());
+                `;
+                document.head.appendChild(script);
+            }
+        </script>
+        <script>
+            // load walker
+            (async function(){
+                await load('../../src/options.js');
+                await load('../../src/properties.js');
+                await load('../../src/ignores.js');
+                await load('../../src/walk.js');
+                top.walk = require('./walk');
+            }());
+        </script>
+        <script></script>
+        <script>
+            // load demo
+            function walkAndSearch(start, end){
+                let result = false;
+                walk(start, (val) => {
+                    return result = result || val === end;
+                });
+                return result;
+            }
+            function walkAndSearchAndLog(start, end) {
+                console.log('Does\n', start, '\nlead to\n', end, '\n?', walkAndSearch(start, end));
+            }
+            setTimeout(walkAndSearchAndLog, 100, window, window);
+            setTimeout(walkAndSearchAndLog, 100, window, document);
+            setTimeout(walkAndSearchAndLog, 100, document, window);
+            setTimeout(walkAndSearchAndLog, 100, document, WebAssembly);
+            setTimeout(walkAndSearchAndLog, 100, WebAssembly, document);
+        </script>
+    </head>
+    <body>
+        <b>open console</b>
+    </body>
+</html>

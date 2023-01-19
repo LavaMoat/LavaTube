@@ -14,10 +14,7 @@ function shouldIgnoreAsyncProps(prop, obj) {
 
 // some properties found on __proto__ can only be accessed
 // via an instance of the prototype rather than the prototype itself
-function shouldIgnoreProtoProperty(prop, obj, keys) {
-    if (keys[keys.length - 1] !== '__proto__') {
-        return false;
-    }
+function shouldIgnoreProtoProperty(prop, obj) {
     try {
         obj[prop];
         return false;
@@ -44,11 +41,11 @@ function shouldIgnoreSvgLengthValue(prop, obj, values) {
     return true;
 }
 
-function shouldIgnore(prop, obj, keys, values) {
+function shouldIgnore(prop, obj, values) {
     return (
         shouldIgnoreAsyncProps(prop, obj) ||
         shouldIgnoreSvgLengthValue(prop, obj, values) ||
-        shouldIgnoreProtoProperty(prop, obj, keys)
+        shouldIgnoreProtoProperty(prop, obj)
     );
 }
 

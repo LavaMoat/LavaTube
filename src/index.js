@@ -1,5 +1,8 @@
 const walk = require('./walk');
 
-module.exports = function(obj, dst, opts = {}, keys = [], values = []) {
-    return walk(obj, dst, opts, keys, values);
+module.exports = function(start, cb, opts = {}) {
+    if (typeof cb !== 'function') {
+        throw new Error(`@options.cb must be a function, instead got a "${typeof cb}"`);
+    }
+    return walk(start, cb, opts);
 };

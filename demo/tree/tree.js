@@ -7,7 +7,7 @@ function key(prop, val) { // customize aggregation
 }
 
 function tree(src, dst, limit) {
-    function cb(val, dst, path) {
+    function cb(val, path) {
         if (val === dst) {
             let subtree = tree;
             for (let i =  0; i < path.length; i++) {
@@ -20,7 +20,7 @@ function tree(src, dst, limit) {
     }
 
     const tree = {};
-    walk(src, dst, {limit, key, cb});
+    walk(src, cb, {limit, key});
     return tree;
 }
 
