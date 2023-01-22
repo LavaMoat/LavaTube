@@ -1,6 +1,7 @@
-const cache = new Map();
-
-function getAllPropsFromCache(obj) {
+function getAllPropsFromCache(obj, cache) {
+    if (!cache) {
+        return Object.getOwnPropertyNames(obj);
+    }
     let ownProps = cache.get(obj);
     if (!ownProps) {
         ownProps = Object.getOwnPropertyNames(obj);
@@ -9,12 +10,12 @@ function getAllPropsFromCache(obj) {
     return ownProps;
 }
 
-function getAllProps(obj, props = []) {
+function getAllProps(obj, cache, props = []) {
     if (!obj) {
         return props;
     }
-    props = [...props, ...getAllPropsFromCache(obj)];
-    return getAllProps(Object.getPrototypeOf(obj), props);
+    props = [...props, ...getAllPropsFromCache(obj, cache)];
+    return getAllProps(Object.getPrototypeOf(obj), cache, props);
 }
 
 module.exports = getAllProps;
