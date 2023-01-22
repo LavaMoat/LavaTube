@@ -3,13 +3,6 @@
   "version": "0.1.0",
   "description": "walker",
   "main": "src/index.js",
-  "scripts": {
-    "build-dev": "webpack --config ./webpack.config.js",
-    "build-prod": "webpack --config ./webpack.prod.config.js",
-    "build": "yarn build-prod & yarn build-dev",
-    "test": "./node_modules/.bin/wdio run wdio.conf.js",
-    "build-test": "yarn build && yarn test"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lavamoat/walker.git"
