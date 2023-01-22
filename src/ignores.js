@@ -1,3 +1,17 @@
+const ignoreErrors = [
+    "Illegal invocation",
+    "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them",
+];
+
+// TODO: walker will fail cross realms due to identity discontinuity lack of support - fix when needed
+const ignoreProtos = {
+    'description': Symbol.prototype,
+    'exports': WebAssembly.Instance.prototype,
+    'value': WebAssembly.Global.prototype,
+    'buffer': WebAssembly.Memory.prototype,
+    'length': WebAssembly.Table.prototype,
+}
+
 // ignore properties that when accessed return a promise
 // so that walker won't have to modify itself to async-await
 function shouldIgnoreAsyncProps(prop, obj) {
@@ -15,12 +29,15 @@ function shouldIgnoreAsyncProps(prop, obj) {
 // some properties found on __proto__ can only be accessed
 // via an instance of the prototype rather than the prototype itself
 function shouldIgnoreProtoProperty(prop, obj) {
+    if (ignoreProtos.hasOwnProperty(prop) && ignoreProtos[prop] === obj) {
+        return true;
+    }
     try {
         obj[prop];
         return false;
-    } catch (cause) {
-        if (cause.message !== 'Illegal invocation') {
-            throw new Error('Unexpected error thrown in walker:', {cause});
+    } catch (error) {
+        if (!ignoreErrors.includes(error.message)) {
+            throw error;
         }
     }
     return true;

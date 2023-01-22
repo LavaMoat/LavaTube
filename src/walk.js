@@ -2,39 +2,75 @@ const shouldIgnore = require('./ignores');
 const options = require('./options');
 const getAllProps = require('./properties');
 
-function shouldWalk(obj, values, limit) {
-    if (limit === 0) {
+function isPrimitive(obj) {
+    if (obj === null) {
+        return true;
+    }
+    const type = typeof obj;
+    return (
+        type === 'bigint' ||
+        type === 'boolean' ||
+        type === 'number' ||
+        type === 'string'
+    );
+
+}
+
+function shouldWalk(obj, values, opts = {}) {
+    if (isPrimitive(obj)) {
         return false;
     }
-    if (obj === null || typeof obj !== 'object') {
+    const {
+        avoidValuesCache,
+        valuesCacheSet,
+        maxRecursionLimit,
+    } = options(opts);
+    if (maxRecursionLimit === 0) {
         return false;
     }
-    if (values.includes(obj)) {
+    if (avoidValuesCache) {
+        return true;
+    }
+    if (valuesCacheSet.has(obj)) {
         return false;
     }
+    valuesCacheSet.add(obj);
     return true;
 }
 
 function walk(obj, cb, opts = {}, keys = [], values = []) {
-    const {key, limit} = options(opts);
-    if (!shouldWalk(obj, values, limit)) {
+    const {
+        generateKey,
+        avoidValuesCache,
+        avoidPropertiesCache,
+        valuesCacheSet,
+        propertiesCacheMap,
+        maxRecursionLimit,
+    } = options(opts);
+    if (!shouldWalk(obj, values, {avoidValuesCache, valuesCacheSet, maxRecursionLimit})) {
         return false;
     }
-    const props = getAllProps(obj);
+    const props = getAllProps(obj, !avoidPropertiesCache && propertiesCacheMap);
     for (let i = 0; i < props.length; i++) {
         const prop = props[i];
         if (shouldIgnore(prop, obj, values)) {
             continue;
         }
-        let stop;
         const val = obj[prop];
-        const newKeys = [...keys, key(prop, val)];
+        const newKeys = [...keys, generateKey(prop, val)];
         const newValues = [...values, obj];
-        const newOpts = {key, limit: limit - 1};
-        stop = walk(val, cb, newOpts, newKeys, newValues);
-        if (stop) return true;
-        stop = cb(val, newKeys);
-        if (stop) return true;
+        const newOpts = {
+            generateKey,
+            avoidValuesCache,
+            avoidPropertiesCache,
+            valuesCacheSet,
+            propertiesCacheMap,
+            maxRecursionLimit,
+        };
+        newOpts.maxRecursionLimit -= 1;
+        if (walk(val, cb, newOpts, newKeys, newValues) || cb(val, newKeys)) {
+            return true;
+        }
     }
     return false;
 }

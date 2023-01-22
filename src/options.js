@@ -1,9 +1,19 @@
 function options(opts = {}) {
-    if (typeof opts.key !== 'function') {
-        opts.key = (prop, val) => `${({}).toString.call(val)}:${prop}`;
+    if (typeof opts.generateKey !== 'function') {
+        opts.generateKey = (prop, val) => `${({}).toString.call(val)}:${prop}`;
     }
-    if (typeof opts.limit !== 'number') {
-        opts.limit = 5;
+    if (typeof opts.maxRecursionLimit !== 'number') {
+        opts.maxRecursionLimit = 5;
+    }
+    if (!(opts.avoidPropertiesCache = Boolean(opts.avoidPropertiesCache))) {
+        if (typeof opts.propertiesCacheMap !== 'object') {
+            opts.propertiesCacheMap = new Map();
+        }
+    }
+    if (!(opts.avoidValuesCache = Boolean(opts.avoidValuesCache))) {
+        if (typeof opts.valuesCacheSet !== 'object') {
+            opts.valuesCacheSet = new Set();
+        }
     }
     return opts;
 }
