@@ -13,19 +13,19 @@ check out the [demo](https://lavamoat.github.io/walker/demo/)
 ## use
 
 ```javascript
-const walk = require('@lavamoat/walker');
+const Walker = require('@lavamoat/walker');
 
-walk(start, cb, opts = {}); // example
+new Walker(cb, opts = {}).walk(start); // example
 
-walk(window, (value, path) => {
+new Walker((value, path) => {
     console.log('found value:', value);
     console.log('path to value was:', path);
     if (value === 1) {
         return true; // true means stop walker
     }
-});
+}, {maxRecursionLimit: 9}).walk(window);
 
-// options object can be passed as third argument optionally:
+// options object can be passed as second argument to Walker constructor optionally:
 const opts = {
     // a function with which the visited keys during walking 
     // process can be customizd for how they appear within 
