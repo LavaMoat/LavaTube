@@ -40,7 +40,7 @@ Walker.prototype.walkRecursively = function(obj, limit, keys = [], values = []) 
     const props = getAllProps(obj, cache);
     for (let i = 0; i < props.length; i++) {
         const prop = props[i];
-        if (shouldIgnore(prop, obj, values)) {
+        if (shouldIgnore(prop, obj, values, this.onShouldIgnoreError)) {
             continue;
         }
         const val = obj[prop];
@@ -55,6 +55,7 @@ Walker.prototype.walkRecursively = function(obj, limit, keys = [], values = []) 
 
 function Walker(cb, {
                     generateKey,
+                    onShouldIgnoreError,
                     avoidValuesCache,
                     avoidPropertiesCache,
                     valuesCacheSet,
@@ -66,6 +67,9 @@ function Walker(cb, {
     }
     if (typeof generateKey !== 'function') {
         generateKey = (prop, val) => `${({}).toString.call(val)}:${prop}`;
+    }
+    if (typeof onShouldIgnoreError !== 'function') {
+        onShouldIgnoreError = (prop, obj, error) => { throw error };
     }
     if (typeof maxRecursionLimit !== 'number') {
         maxRecursionLimit = 5;
@@ -82,6 +86,7 @@ function Walker(cb, {
     }
     this.cb = cb;
     this.generateKey = generateKey;
+    this.onShouldIgnoreError = onShouldIgnoreError;
     this.avoidValuesCache = avoidValuesCache;
     this.avoidPropertiesCache = avoidPropertiesCache;
     this.valuesCacheSet = valuesCacheSet;

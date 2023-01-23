@@ -31,6 +31,11 @@ const opts = {
     // process can be customizd for how they appear within 
     // @path argument (useful for aggregation purposes).
     generateKey, // (k) => '__' + k + '__'
+    // a function that catches errors thrown in the function that is trying to determine
+    // whether a property of an object should be ignored from walking into or not.
+    // since it is very delicate, the user can catch those errors and decide how to deal with them.
+    // use it to return true to skip the property or false to try to walk into it.
+    onShouldIgnoreError, // (prop, obj, error) => true <-- this will skip properties that failed the ignore-check
     // a boolean to indicate whether to use or avoid cache for visited values.
     // when true, walker will not skip walking into non primitive values that were already processed.
     avoidValuesCache, // true/false [default false]

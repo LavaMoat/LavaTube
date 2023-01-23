@@ -58,12 +58,16 @@ function shouldIgnoreSvgLengthValue(prop, obj, values) {
     return true;
 }
 
-function shouldIgnore(prop, obj, values) {
-    return (
-        shouldIgnoreAsyncProps(prop, obj) ||
-        shouldIgnoreSvgLengthValue(prop, obj, values) ||
-        shouldIgnoreProtoProperty(prop, obj)
-    );
+function shouldIgnore(prop, obj, values, onerror) {
+    try {
+        return (
+            shouldIgnoreAsyncProps(prop, obj) ||
+            shouldIgnoreSvgLengthValue(prop, obj, values) ||
+            shouldIgnoreProtoProperty(prop, obj)
+        );
+    } catch (error) {
+        return onerror(prop, obj, error);
+    }
 }
 
 module.exports = shouldIgnore;
