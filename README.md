@@ -4,7 +4,7 @@ walk through the proto chain
 
 ## demo
 
-check out the [demo](https://lavamoat.github.io/lavatube/demo/)
+check out the [demo](https://lavamoat.github.io/LavaTube/demo/)
 
 ## install
 
