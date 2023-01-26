@@ -1,6 +1,6 @@
 {
   "name": "@lavamoat/lavatube",
-  "version": "0.3.0",
+  "version": "0.0.1",
   "description": "lavatube",
   "main": "src/index.js",
   "repository": {
