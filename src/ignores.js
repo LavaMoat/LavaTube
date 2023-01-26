@@ -3,7 +3,7 @@ const ignoreErrors = [
     "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them",
 ];
 
-// TODO: walker will fail cross realms due to identity discontinuity lack of support - fix when needed
+// TODO: lavatube will fail cross realms due to identity discontinuity lack of support - fix when needed
 const ignoreProtos = {
     'description': Symbol.prototype,
     'exports': WebAssembly.Instance.prototype,
@@ -13,7 +13,7 @@ const ignoreProtos = {
 }
 
 // ignore properties that when accessed return a promise
-// so that walker won't have to modify itself to async-await
+// so that lavatube won't have to modify itself to async-await
 function shouldIgnoreAsyncProps(prop, obj) {
     if (prop === 'ready' || prop === 'loading') {
         if (ServiceWorkerContainer.prototype === obj) {

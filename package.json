@@ -1,17 +1,17 @@
 {
-  "name": "@lavamoat/walker",
-  "version": "0.2.1",
-  "description": "walker",
+  "name": "@lavamoat/lavatube",
+  "version": "0.3.0",
+  "description": "lavatube",
   "main": "src/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lavamoat/walker.git"
+    "url": "git+https://github.com/lavamoat/lavatube.git"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/lavamoat/walker/issues"
+    "url": "https://github.com/lavamoat/lavatube/issues"
   },
-  "homepage": "https://lavamoat.github.io/walker/"
+  "homepage": "https://lavamoat.github.io/lavatube/"
 }

@@ -15,7 +15,7 @@ function isPrimitive(obj) {
 
 }
 
-Walker.prototype.shouldWalk = function(obj, limit) {
+LavaTube.prototype.shouldWalk = function(obj, limit) {
     if (isPrimitive(obj)) {
         return false;
     }
@@ -32,7 +32,7 @@ Walker.prototype.shouldWalk = function(obj, limit) {
     return true;
 }
 
-Walker.prototype.walkRecursively = function(obj, limit, keys = [], values = []) {
+LavaTube.prototype.walkRecursively = function(obj, limit, keys = [], values = []) {
     if (!this.shouldWalk(obj, limit)) {
         return false;
     }
@@ -53,7 +53,7 @@ Walker.prototype.walkRecursively = function(obj, limit, keys = [], values = []) 
     return false;
 }
 
-function Walker(cb, {
+function LavaTube(cb, {
                     generateKey,
                     onShouldIgnoreError,
                     avoidValuesCache,
@@ -94,8 +94,8 @@ function Walker(cb, {
     this.maxRecursionLimit = maxRecursionLimit;
 }
 
-Walker.prototype.walk = function(start) {
+LavaTube.prototype.walk = function(start) {
     return this.walkRecursively(start, this.maxRecursionLimit);
 }
 
-module.exports = Walker;
+module.exports = LavaTube;

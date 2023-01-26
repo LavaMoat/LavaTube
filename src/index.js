@@ -1,3 +1,3 @@
-const Walker = require('./walker');
+const LavaTube = require('./lavatube');
 
-module.exports = Walker;
+module.exports = LavaTube;
