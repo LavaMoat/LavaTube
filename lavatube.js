@@ -5,36 +5,70 @@
 /***/ ((module) => {
 
 const ignoreErrors = ["Illegal invocation", "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"];
-
-// TODO: lavatube will fail cross realms due to identity discontinuity lack of support - fix when needed
-const ignoreProtos = {
-  'description': Symbol.prototype,
-  'exports': WebAssembly.Instance.prototype,
-  'value': WebAssembly.Global.prototype,
-  'buffer': WebAssembly.Memory.prototype,
-  'length': WebAssembly.Table.prototype
-};
-
-// ignore properties that when accessed return a promise
-// so that lavatube won't have to modify itself to async-await
-function shouldIgnoreAsyncProps(prop, obj) {
-  if (prop === 'ready' || prop === 'loading') {
-    if (ServiceWorkerContainer.prototype === obj) {
-      return true;
-    }
-    if (Object.getPrototypeOf(document.fonts) === obj) {
-      return true;
-    }
+function shouldIgnoreHardcodedProtos(prop, obj) {
+  // not sure
+  switch (obj) {
+    case window?.Symbol?.prototype:
+      return prop === 'description';
+  }
+  // wasm
+  switch (obj) {
+    case window?.WebAssembly?.Instance.prototype:
+      return prop === 'exports';
+    case window?.WebAssembly?.Global.prototype:
+      return prop === 'value';
+    case window?.WebAssembly?.Memory.prototype:
+      return prop === 'buffer';
+    case window?.WebAssembly?.Table.prototype:
+      return prop === 'length';
+  }
+  // promises
+  switch (obj) {
+    case window?.ServiceWorkerContainer?.prototype:
+      return prop === 'ready';
+    case window?.Object?.getPrototypeOf(document?.fonts):
+      return prop === 'loading' || prop === 'finished' || prop === 'ready';
+    case window?.WritableStreamDefaultWriter?.prototype:
+      return prop === 'loading' || prop === 'closed' || prop === 'ready';
+    case window?.ReadableStreamDefaultReader?.prototype:
+      return prop === 'closed';
+    case window?.ReadableStreamBYOBReader?.prototype:
+      return prop === 'closed';
+    case window?.PromiseRejectionEvent?.prototype:
+      return prop === 'promise';
+    case window?.FontFace?.prototype:
+      return prop === 'loaded';
+    case window?.BeforeInstallPromptEvent?.prototype:
+      return prop === 'userChoice';
+    case window?.Animation?.prototype:
+      return prop === 'finished' || prop === 'ready';
+    case window?.CSSAnimation?.prototype:
+      return prop === 'finished' || prop === 'ready';
+    case window?.CSSTransition?.prototype:
+      return prop === 'finished' || prop === 'ready';
+    case window?.MediaKeySession?.prototype:
+      return prop === 'closed';
+    case window?.WebTransport?.prototype:
+      return prop === 'ready' || prop === 'closed';
+    case window?.ImageTrackList?.prototype:
+      return prop === 'ready';
+    case window?.ImageDecoder?.prototype:
+      return prop === 'completed';
+    case window?.PresentationReceiver?.prototype:
+      return prop === 'connectionList';
+    case window?.BackgroundFetchRecord?.prototype:
+      return prop === 'responseReady';
+    case window?.NavigationTransition?.prototype:
+      return prop === 'finished';
+    case window?.RTCPeerConnection?.prototype:
+      return prop === 'peerIdentity';
   }
   return false;
 }
 
 // some properties found on __proto__ can only be accessed
 // via an instance of the prototype rather than the prototype itself
-function shouldIgnoreProtoProperty(prop, obj) {
-  if (ignoreProtos.hasOwnProperty(prop) && ignoreProtos[prop] === obj) {
-    return true;
-  }
+function shouldIgnoreDynamicProtos(prop, obj) {
   try {
     obj[prop];
     return false;
@@ -62,7 +96,7 @@ function shouldIgnoreSvgLengthValue(prop, obj, values) {
 }
 function shouldIgnore(prop, obj, values, onerror) {
   try {
-    return shouldIgnoreAsyncProps(prop, obj) || shouldIgnoreSvgLengthValue(prop, obj, values) || shouldIgnoreProtoProperty(prop, obj);
+    return shouldIgnoreHardcodedProtos(prop, obj) || shouldIgnoreSvgLengthValue(prop, obj, values) || shouldIgnoreDynamicProtos(prop, obj);
   } catch (error) {
     return onerror(prop, obj, error);
   }
