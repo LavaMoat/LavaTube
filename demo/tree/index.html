@@ -1,41 +1,7 @@
 <html>
     <head>
-        <script>
-            top.modules = {};
-            function srcToModule(src) {
-                const parts = src.split('/');
-                const module = './' + parts[parts.length - 1].split('.js')[0];
-                return module;
-            }
-            function require(src) {
-                return top.modules[srcToModule(src)].exports;
-            }
-            async function load(src) {
-                const res = await fetch(src);
-                let js = await res.text();
-                const script = document.createElement('script');
-                script.textContent = `
-                top.modules['${srcToModule(src)}'] = (function(){
-                    const module = {};
-                    ${js}
-                    return module;
-                }());
-                `;
-                document.head.appendChild(script);
-            }
-        </script>
         <script src="https://cdn.jsdelivr.net/npm/treeify/treeify.js"></script>
-        <script>
-            // load lavatube
-            (async function(){
-                await load('../../src/options.js');
-                await load('../../src/properties.js');
-                await load('../../src/ignores.js');
-                await load('../../src/walk.js');
-                await load('./tree.js');
-            }());
-        </script>
-        <script></script>
+        <script src="../../lavatube.js"></script>
         <script>
             // load demo
             function start(){

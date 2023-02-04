@@ -1,5 +1,3 @@
-const walk = require('./walk');
-
 function key(prop, val) { // customize aggregation
     const proto = `${({}).toString.call(val)}`;
     return prop;  // "ownerDocument"
@@ -20,7 +18,7 @@ function tree(src, dst, limit) {
     }
 
     const tree = {};
-    walk(src, cb, {limit, key});
+    new LavaTube(cb, {generateKey: key, maxRecursionLimit: limit}).walk(src);
     return tree;
 }
 

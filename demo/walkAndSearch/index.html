@@ -1,47 +1,13 @@
 <html>
     <head>
-        <script>
-            top.modules = {};
-            function srcToModule(src) {
-                const parts = src.split('/');
-                const module = './' + parts[parts.length - 1].split('.js')[0];
-                return module;
-            }
-            function require(src) {
-                return top.modules[srcToModule(src)].exports;
-            }
-            async function load(src) {
-                const res = await fetch(src);
-                let js = await res.text();
-                const script = document.createElement('script');
-                script.textContent = `
-                top.modules['${srcToModule(src)}'] = (function(){
-                    const module = {};
-                    ${js}
-                    return module;
-                }());
-                `;
-                document.head.appendChild(script);
-            }
-        </script>
-        <script>
-            // load lavatube
-            (async function(){
-                await load('../../src/options.js');
-                await load('../../src/properties.js');
-                await load('../../src/ignores.js');
-                await load('../../src/walk.js');
-                top.walk = require('./walk');
-            }());
-        </script>
-        <script></script>
+        <script src="../../lavatube.js"></script>
         <script>
             // load demo
             function walkAndSearch(start, end){
                 let result = false;
-                walk(start, (val) => {
+                new LavaTube((val) => {
                     return result = result || val === end;
-                });
+                }).walk(start);
                 return result;
             }
             function walkAndSearchAndLog(start, end) {
