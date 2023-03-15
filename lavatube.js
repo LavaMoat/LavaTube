@@ -24,6 +24,8 @@ function shouldIgnoreHardcodedProtos(prop, obj) {
   }
   // promises
   switch (obj) {
+    case window?.ViewTransition?.prototype:
+      return prop === 'ready' || prop === 'finished' || prop === 'updateCallbackDone';
     case window?.ServiceWorkerContainer?.prototype:
       return prop === 'ready';
     case window?.Object?.getPrototypeOf(document?.fonts):
