@@ -2,11 +2,11 @@ module.exports = {
     optimization: {
         minimize: false
     },
-    entry: './bundleEntry.js',
+    entry: './src/bundleEntry.js',
     mode: 'production',
     output: {
         path: `${__dirname}`,
-        filename: 'lavatube.js',
+        filename: 'dist/lavatube.js',
     },
     module: {
         rules: [

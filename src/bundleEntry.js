@@ -1,4 +1,4 @@
-import init from "./src/index";
+import init from "./index";
 
 Object.defineProperty(globalThis, 'LavaTube', {
   configurable: true,

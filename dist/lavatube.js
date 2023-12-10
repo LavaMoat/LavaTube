@@ -302,16 +302,14 @@ var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be in strict mode.
 (() => {
 "use strict";
-/* harmony import */ var _src_index__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(352);
-/* harmony import */ var _src_index__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_src_index__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _index__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(352);
+/* harmony import */ var _index__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_index__WEBPACK_IMPORTED_MODULE_0__);
 
-(function (win) {
-  Object.defineProperty(win, 'LavaTube', {
-    configurable: true,
-    writable: true,
-    value: (_src_index__WEBPACK_IMPORTED_MODULE_0___default())
-  });
-})(window);
+Object.defineProperty(globalThis, 'LavaTube', {
+  configurable: true,
+  writable: true,
+  value: (_index__WEBPACK_IMPORTED_MODULE_0___default())
+});
 })();
 
 /******/ })()
