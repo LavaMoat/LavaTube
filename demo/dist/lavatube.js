@@ -4,7 +4,7 @@
 /***/ 655:
 /***/ ((module) => {
 
-const ignoreErrors = ["Illegal invocation", "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"];
+const ignoreErrors = (/* unused pure expression or super */ null && (["Illegal invocation", "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them", "'get src' called on an object that does not implement interface HTMLScriptElement.", "'get type' called on an object that does not implement interface HTMLScriptElement.", "'get noModule' called on an object that does not implement interface HTMLScriptElement."]));
 function shouldIgnoreHardcodedProtos(prop, obj) {
   // not sure
   switch (obj) {
@@ -75,9 +75,9 @@ function shouldIgnoreDynamicProtos(prop, obj) {
     obj[prop];
     return false;
   } catch (error) {
-    if (!ignoreErrors.includes(error.message)) {
-      throw error;
-    }
+    // always ignore errors.
+    // TODO: additionally, we should walk the errors.
+    return true;
   }
   return true;
 }
@@ -110,14 +110,6 @@ module.exports = shouldIgnore;
 /***/ 352:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-const LavaTube = __webpack_require__(492);
-module.exports = LavaTube;
-
-/***/ }),
-
-/***/ 492:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
 const shouldIgnore = __webpack_require__(655);
 const getAllProps = __webpack_require__(285);
 function isPrimitive(obj) {
@@ -143,9 +135,9 @@ LavaTube.prototype.shouldWalk = function (obj, limit) {
   this.valuesCacheSet.add(obj);
   return true;
 };
-LavaTube.prototype.walkRecursively = function (obj, limit) {
-  let keys = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-  let values = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+LavaTube.prototype.walkRecursively = function (obj, visitorFn, limit) {
+  let keys = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+  let values = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : [];
   if (!this.shouldWalk(obj, limit)) {
     return false;
   }
@@ -159,13 +151,37 @@ LavaTube.prototype.walkRecursively = function (obj, limit) {
     const val = obj[prop];
     const newKeys = [...keys, this.generateKey(prop, val)];
     const newValues = [...values, obj];
-    if (this.walkRecursively(val, limit - 1, newKeys, newValues) || this.cb(val, newKeys)) {
+    if (this.walkRecursively(val, visitorFn, limit - 1, newKeys, newValues) || visitorFn(val, newKeys)) {
       return true;
     }
   }
   return false;
 };
-function LavaTube(cb, _ref) {
+LavaTube.prototype.walkIteratively = function (obj, limit) {
+  var _this = this;
+  let keys = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+  let values = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+  return function* () {
+    yield [val, keys];
+    if (!_this.shouldWalk(obj, limit)) {
+      return;
+    }
+    const cache = !_this.avoidPropertiesCache && _this.propertiesCacheMap;
+    const props = getAllProps(obj, cache);
+    for (let i = 0; i < props.length; i++) {
+      const prop = props[i];
+      if (shouldIgnore(prop, obj, values, _this.onShouldIgnoreError)) {
+        continue;
+      }
+      const val = obj[prop];
+      const newKeys = [...keys, _this.generateKey(prop, val)];
+      const newValues = [...values, obj];
+      yield* _this.walkIteratively(val, limit - 1, newKeys, newValues);
+    }
+    return false;
+  }();
+};
+function LavaTube() {
   let {
     generateKey,
     onShouldIgnoreError,
@@ -174,10 +190,7 @@ function LavaTube(cb, _ref) {
     valuesCacheSet,
     propertiesCacheMap,
     maxRecursionLimit
-  } = _ref;
-  if (typeof cb !== 'function') {
-    throw new Error(`@cb must be a function, instead got a "${typeof cb}"`);
-  }
+  } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
   if (typeof generateKey !== 'function') {
     generateKey = (prop, val) => `${{}.toString.call(val)}:${prop}`;
   }
@@ -199,7 +212,6 @@ function LavaTube(cb, _ref) {
       valuesCacheSet = new Set();
     }
   }
-  this.cb = cb;
   this.generateKey = generateKey;
   this.onShouldIgnoreError = onShouldIgnoreError;
   this.avoidValuesCache = avoidValuesCache;
@@ -208,8 +220,8 @@ function LavaTube(cb, _ref) {
   this.propertiesCacheMap = propertiesCacheMap;
   this.maxRecursionLimit = maxRecursionLimit;
 }
-LavaTube.prototype.walk = function (start) {
-  return this.walkRecursively(start, this.maxRecursionLimit);
+LavaTube.prototype.walk = function (start, visitorFn) {
+  return this.walkRecursively(start, visitorFn, this.maxRecursionLimit);
 };
 module.exports = LavaTube;
 

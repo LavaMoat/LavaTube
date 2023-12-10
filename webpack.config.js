@@ -6,7 +6,7 @@ module.exports = {
     mode: 'production',
     output: {
         path: `${__dirname}`,
-        filename: 'dist/lavatube.js',
+        filename: 'demo/dist/lavatube.js',
     },
     module: {
         rules: [
