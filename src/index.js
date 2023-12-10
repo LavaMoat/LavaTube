@@ -1,6 +1,4 @@
-const getAllProps = require('./properties');
-
-function isPrimitive(obj) {
+const isPrimitive = (obj) => {
     return !Object.is(obj, Object(obj));
 }
 
@@ -13,45 +11,101 @@ const isPromiseLike = (obj) => {
     );
 }
 
-const walkIteratively = function*(target, config, limit, path = []) {
-  yield [target, path];
-  if (isPrimitive(obj)) {
-    return;
-  }
-  if (limit === 0) {
-      return;
-  }
-  if (!config.shouldWalk(target)) {
-      return;
-  }
-  const cache = !config.avoidPropertiesCache && config.propertiesCacheMap;
-  const props = getAllProps(target, cache);
-  for (let i = 0; i < props.length; i++) {
-      const prop = props[i];
-      let value;
-      try {
-          value = target[prop];
-      } catch (err) {
-          // TODO: we should walk the error
-          continue;
-      }
-      if (isPromiseLike(value)) {
-          // ignore promise rejections
-          Promise.resolve(value).catch(err => {});
-      }
-      const childPath = [...path, config.generateKey(prop, value)];
-      yield* walkIteratively(value, config, limit - 1, childPath);
-  }
+const keyToString = (key) => {
+    if (typeof key === 'symbol') {
+        return key.toString();
+    } else {
+        return Object.prototype.toString.call(key);
+    }
+}
+
+const getProtoTypeChain = (target) => {
+    const chain = [target];
+    let proto = Reflect.getPrototypeOf(target);
+    while (proto) {
+        chain.push(proto);
+        proto = Reflect.getPrototypeOf(proto);
+    }
+    return chain;
+}
+
+const getPrototypeChainKeys = (target) => {
+    const props = [];
+    const visitedKeys = new Set();
+    for (const proto of getProtoTypeChain(target)) {
+        for (const key of Reflect.ownKeys(proto)) {
+            if (visitedKeys.has(key)) {
+                continue;
+            }
+            props.push([proto, key]);
+        }
+    }
+    return props;
+}
+
+const getAllProps = (target, shouldInvokeGetters) => {
+    const props = [];
+    const proto = Reflect.getPrototypeOf(target);
+    if (proto) {
+        props.push(['<prototype>', proto]);
+    }
+    for (const [proto, key] of getPrototypeChainKeys(target)) {
+        let value
+        try {
+            const propDesc = Reflect.getOwnPropertyDescriptor(proto, key);
+            if (propDesc === undefined) {
+                continue;
+            }
+            if (propDesc.get !== undefined) {
+                props.push([`<get ${keyToString(key)}>`, propDesc.get]);
+                if (!shouldInvokeGetters) {
+                    continue;
+                }
+            }
+            value = Reflect.get(proto, key, target);
+            // some values are getters that return promises that reject
+            if (isPromiseLike(value)) {
+                // ignore promise rejection warnings
+                Promise.resolve(value).catch(err => {});
+            }
+            props.push([key, value]);
+        } catch (err) {
+            props.push([`<get ${keyToString(key)} error>`, err]);
+            continue;
+        }
+    }
+    return props;
+}
+
+const walkIteratively = function*(target, config, limit, visited = new WeakSet(), path = []) {
+    if (isPrimitive(target)) {
+        return;
+    }
+    if (visited.has(target)) {
+        return;
+    }
+    visited.add(target);
+
+    yield [target, path];
+
+    if (limit === 0) {
+        return;
+    }
+    if (!config.shouldWalk(target)) {
+        return;
+    }
+
+    const props = getAllProps(target, config.shouldInvokeGetters);
+    for (const [key, value] of props) {
+        const childPath = [...path, config.generateKey(key, value)];
+        yield* walkIteratively(value, config, limit - 1, visited, childPath);
+    }
 }
 
 LavaTube.prototype.shouldWalk = function(obj) {
     if (this.avoidValuesCache) {
         return true;
     }
-    if (this.valuesCacheSet.has(obj)) {
-        return false;
-    }
-    this.valuesCacheSet.add(obj);
     return true;
 }
 
@@ -65,13 +119,17 @@ function LavaTube({
                     maxRecursionLimit,
                 } = {}) {
     if (typeof generateKey !== 'function') {
-        generateKey = (prop, val) => `${Object.prototype.toString.call(val)}:${prop}`;
+        generateKey = (key, value) => {
+            const keyString = keyToString(key);
+            const valueString = Object.prototype.toString.call(value);
+            return `${valueString}:${keyString}`;
+        }
     }
     if (typeof onShouldIgnoreError !== 'function') {
         onShouldIgnoreError = (prop, obj, error) => { throw error };
     }
     if (typeof maxRecursionLimit !== 'number') {
-        maxRecursionLimit = 5;
+        maxRecursionLimit = Infinity;
     }
     if (!(avoidPropertiesCache = Boolean(avoidPropertiesCache))) {
         if (typeof propertiesCacheMap !== 'object') {
@@ -80,7 +138,7 @@ function LavaTube({
     }
     if (!(avoidValuesCache = Boolean(avoidValuesCache))) {
         if (typeof valuesCacheSet !== 'object') {
-            valuesCacheSet = new Set();
+            valuesCacheSet = new WeakSet();
         }
     }
     this.generateKey = generateKey;
@@ -96,10 +154,14 @@ LavaTube.prototype.walk = function(start, visitorFn) {
     const config = {
         shouldWalk: this.shouldWalk.bind(this),
         generateKey: this.generateKey,
-        avoidPropertiesCache: this.avoidPropertiesCache,
-        propertiesCacheMap: this.propertiesCacheMap,
+        shouldInvokeGetters: true,
     };
-    for (const [val, keys] of walkIteratively(start, config, this.maxRecursionLimit)) {
+    for (const [val, keys] of walkIteratively(
+        start,
+        config,
+        this.maxRecursionLimit,
+        this.valuesCacheSet
+    )) {
         if (visitorFn(val, keys)) {
             return true;
         }
