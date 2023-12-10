@@ -2,7 +2,7 @@ module.exports = {
     optimization: {
         minimize: false
     },
-    entry: './build.js',
+    entry: './bundleEntry.js',
     mode: 'production',
     output: {
         path: `${__dirname}`,
