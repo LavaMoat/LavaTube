@@ -1,4 +1,3 @@
-const shouldIgnore = require('./ignores');
 const getAllProps = require('./properties');
 
 function isPrimitive(obj) {
@@ -13,6 +12,15 @@ function isPrimitive(obj) {
         type === 'string'
     );
 
+}
+
+const isPromiseLike = (obj) => {
+    return (
+        typeof obj === 'object' &&
+        obj !== null &&
+        'then' in obj &&
+        typeof obj.then === 'function'
+    );
 }
 
 LavaTube.prototype.shouldWalk = function(obj, limit) {
@@ -40,15 +48,22 @@ LavaTube.prototype.walkRecursively = function(obj, visitorFn, limit, keys = [], 
     const props = getAllProps(obj, cache);
     for (let i = 0; i < props.length; i++) {
         const prop = props[i];
-        if (shouldIgnore(prop, obj, values, this.onShouldIgnoreError)) {
+        let value;
+        try {
+            value = obj[prop];
+        } catch (err) {
+            // TODO: we should walk the error
             continue;
         }
-        const val = obj[prop];
-        const newKeys = [...keys, this.generateKey(prop, val)];
+        if (isPromiseLike(value)) {
+            // ignore promise rejections
+            Promise.resolve(value).catch(err => {});
+        }
+        const newKeys = [...keys, this.generateKey(prop, value)];
         const newValues = [...values, obj];
         if (
-            this.walkRecursively(val, visitorFn, limit - 1, newKeys, newValues)
-            || visitorFn(val, newKeys)
+            this.walkRecursively(value, visitorFn, limit - 1, newKeys, newValues)
+            || visitorFn(value, newKeys)
         ) {
             return true;
         }
@@ -57,7 +72,7 @@ LavaTube.prototype.walkRecursively = function(obj, visitorFn, limit, keys = [], 
 }
 
 LavaTube.prototype.walkIteratively = function*(obj, limit, keys = [], values = []) {
-    yield [val, keys];
+    yield [obj, keys];
     if (!this.shouldWalk(obj, limit)) {
         return;
     }
@@ -65,16 +80,22 @@ LavaTube.prototype.walkIteratively = function*(obj, limit, keys = [], values = [
     const props = getAllProps(obj, cache);
     for (let i = 0; i < props.length; i++) {
         const prop = props[i];
-        if (shouldIgnore(prop, obj, values, this.onShouldIgnoreError)) {
+        let value;
+        try {
+            value = obj[prop];
+        } catch (err) {
+            // TODO: we should walk the error
             continue;
         }
-        const val = obj[prop];
-        const newKeys = [...keys, this.generateKey(prop, val)];
+        if (isPromiseLike(value)) {
+            // ignore promise rejections
+            Promise.resolve(value).catch(err => {});
+        }
+        const newKeys = [...keys, this.generateKey(prop, value)];
         const newValues = [...values, obj];
         
-        yield* this.walkIteratively(val, limit - 1, newKeys, newValues);
+        yield* this.walkIteratively(value, limit - 1, newKeys, newValues);
     }
-    return false;
 }
 
 function LavaTube({
@@ -87,7 +108,7 @@ function LavaTube({
                     maxRecursionLimit,
                 } = {}) {
     if (typeof generateKey !== 'function') {
-        generateKey = (prop, val) => `${({}).toString.call(val)}:${prop}`;
+        generateKey = (prop, val) => `${Object.prototype.toString.call(val)}:${prop}`;
     }
     if (typeof onShouldIgnoreError !== 'function') {
         onShouldIgnoreError = (prop, obj, error) => { throw error };
@@ -116,6 +137,11 @@ function LavaTube({
 
 LavaTube.prototype.walk = function(start, visitorFn) {
     return this.walkRecursively(start, visitorFn, this.maxRecursionLimit);
+    // for (const [val, keys] of this.walkIteratively(start, this.maxRecursionLimit)) {
+    //     if (visitorFn(val, keys)) {
+    //         return true;
+    //     }
+    // }
 }
 
 module.exports = LavaTube;
