@@ -25,4 +25,4 @@ function tree(src, dst, limit) {
     return tree;
 }
 
-module.exports = tree;
+export default tree;

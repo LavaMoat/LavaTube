@@ -1,7 +1,7 @@
 <html>
     <head>
         <script src="https://cdn.jsdelivr.net/npm/treeify/treeify.js"></script>
-        <script src="../../dist/lavatube.js"></script>
+        <script src="../dist/lavatube.js"></script>
         <script>
             // load demo
             function start(){
@@ -9,6 +9,7 @@
                 const src = './examples/' + demo + '.js';
                 const script = document.createElement('script');
                 script.src = src;
+                script.type = 'module';
                 document.head.appendChild(script);
             }
             setTimeout(start, 100);
