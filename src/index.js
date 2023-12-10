@@ -40,18 +40,18 @@ LavaTube.prototype.shouldWalk = function(obj, limit) {
     return true;
 }
 
-LavaTube.prototype.walkIteratively = function*(obj, limit, keys = [], values = []) {
-    yield [obj, keys];
-    if (!this.shouldWalk(obj, limit)) {
+LavaTube.prototype.walkIteratively = function*(target, limit, path = []) {
+    yield [target, path];
+    if (!this.shouldWalk(target, limit)) {
         return;
     }
     const cache = !this.avoidPropertiesCache && this.propertiesCacheMap;
-    const props = getAllProps(obj, cache);
+    const props = getAllProps(target, cache);
     for (let i = 0; i < props.length; i++) {
         const prop = props[i];
         let value;
         try {
-            value = obj[prop];
+            value = target[prop];
         } catch (err) {
             // TODO: we should walk the error
             continue;
@@ -60,10 +60,8 @@ LavaTube.prototype.walkIteratively = function*(obj, limit, keys = [], values = [
             // ignore promise rejections
             Promise.resolve(value).catch(err => {});
         }
-        const newKeys = [...keys, this.generateKey(prop, value)];
-        const newValues = [...values, obj];
-        
-        yield* this.walkIteratively(value, limit - 1, newKeys, newValues);
+        const childPath = [...path, this.generateKey(prop, value)];
+        yield* this.walkIteratively(value, limit - 1, childPath);
     }
 }
 
