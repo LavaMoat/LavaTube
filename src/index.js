@@ -1,17 +1,7 @@
 const getAllProps = require('./properties');
 
 function isPrimitive(obj) {
-    if (obj === null) {
-        return true;
-    }
-    const type = typeof obj;
-    return (
-        type === 'bigint' ||
-        type === 'boolean' ||
-        type === 'number' ||
-        type === 'string'
-    );
-
+    return !Object.is(obj, Object(obj));
 }
 
 const isPromiseLike = (obj) => {
@@ -25,7 +15,13 @@ const isPromiseLike = (obj) => {
 
 const walkIteratively = function*(target, config, limit, path = []) {
   yield [target, path];
-  if (!config.shouldWalk(target, limit)) {
+  if (isPrimitive(obj)) {
+    return;
+  }
+  if (limit === 0) {
+      return;
+  }
+  if (!config.shouldWalk(target)) {
       return;
   }
   const cache = !config.avoidPropertiesCache && config.propertiesCacheMap;
@@ -48,13 +44,7 @@ const walkIteratively = function*(target, config, limit, path = []) {
   }
 }
 
-LavaTube.prototype.shouldWalk = function(obj, limit) {
-    if (isPrimitive(obj)) {
-        return false;
-    }
-    if (limit === 0) {
-        return false;
-    }
+LavaTube.prototype.shouldWalk = function(obj) {
     if (this.avoidValuesCache) {
         return true;
     }
