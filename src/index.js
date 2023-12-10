@@ -32,7 +32,7 @@ LavaTube.prototype.shouldWalk = function(obj, limit) {
     return true;
 }
 
-LavaTube.prototype.walkRecursively = function(obj, limit, keys = [], values = []) {
+LavaTube.prototype.walkRecursively = function(obj, visitorFn, limit, keys = [], values = []) {
     if (!this.shouldWalk(obj, limit)) {
         return false;
     }
@@ -46,14 +46,17 @@ LavaTube.prototype.walkRecursively = function(obj, limit, keys = [], values = []
         const val = obj[prop];
         const newKeys = [...keys, this.generateKey(prop, val)];
         const newValues = [...values, obj];
-        if (this.walkRecursively(val, limit - 1, newKeys, newValues) || this.cb(val, newKeys)) {
+        if (
+            this.walkRecursively(val, limit - 1, newKeys, newValues)
+            || visitorFn(val, newKeys)
+        ) {
             return true;
         }
     }
     return false;
 }
 
-function LavaTube(cb, {
+function LavaTube({
                     generateKey,
                     onShouldIgnoreError,
                     avoidValuesCache,
@@ -62,9 +65,6 @@ function LavaTube(cb, {
                     propertiesCacheMap,
                     maxRecursionLimit,
                 }) {
-    if (typeof cb !== 'function') {
-        throw new Error(`@cb must be a function, instead got a "${typeof cb}"`);
-    }
     if (typeof generateKey !== 'function') {
         generateKey = (prop, val) => `${({}).toString.call(val)}:${prop}`;
     }
@@ -84,7 +84,6 @@ function LavaTube(cb, {
             valuesCacheSet = new Set();
         }
     }
-    this.cb = cb;
     this.generateKey = generateKey;
     this.onShouldIgnoreError = onShouldIgnoreError;
     this.avoidValuesCache = avoidValuesCache;
@@ -94,8 +93,8 @@ function LavaTube(cb, {
     this.maxRecursionLimit = maxRecursionLimit;
 }
 
-LavaTube.prototype.walk = function(start) {
-    return this.walkRecursively(start, this.maxRecursionLimit);
+LavaTube.prototype.walk = function(start, visitorFn) {
+    return this.walkRecursively(start, visitorFn, this.maxRecursionLimit);
 }
 
 module.exports = LavaTube;

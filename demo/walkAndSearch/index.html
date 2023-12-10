@@ -5,9 +5,9 @@
             // load demo
             function walkAndSearch(start, end){
                 let result = false;
-                new LavaTube((val) => {
+                new LavaTube().walk(start, (val) => {
                     return result = result || val === end;
-                }).walk(start);
+                });
                 return result;
             }
             function walkAndSearchAndLog(start, end) {

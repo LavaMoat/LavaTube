@@ -5,7 +5,7 @@ function key(prop, val) { // customize aggregation
 }
 
 function tree(src, dst, limit) {
-    function cb(val, path) {
+    function eachValue(val, path) {
         if (val === dst) {
             let subtree = tree;
             for (let i =  0; i < path.length; i++) {
@@ -18,7 +18,10 @@ function tree(src, dst, limit) {
     }
 
     const tree = {};
-    new LavaTube(cb, {generateKey: key, maxRecursionLimit: limit}).walk(src);
+    new LavaTube({
+        generateKey: key,
+        maxRecursionLimit: limit,
+    }).walk(src, eachValue);
     return tree;
 }
 
