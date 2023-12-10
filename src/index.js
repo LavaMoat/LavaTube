@@ -56,6 +56,27 @@ LavaTube.prototype.walkRecursively = function(obj, visitorFn, limit, keys = [], 
     return false;
 }
 
+LavaTube.prototype.walkIteratively = function*(obj, limit, keys = [], values = []) {
+    yield [val, keys];
+    if (!this.shouldWalk(obj, limit)) {
+        return;
+    }
+    const cache = !this.avoidPropertiesCache && this.propertiesCacheMap;
+    const props = getAllProps(obj, cache);
+    for (let i = 0; i < props.length; i++) {
+        const prop = props[i];
+        if (shouldIgnore(prop, obj, values, this.onShouldIgnoreError)) {
+            continue;
+        }
+        const val = obj[prop];
+        const newKeys = [...keys, this.generateKey(prop, val)];
+        const newValues = [...values, obj];
+        
+        yield* this.walkIteratively(val, limit - 1, newKeys, newValues);
+    }
+    return false;
+}
+
 function LavaTube({
                     generateKey,
                     onShouldIgnoreError,
