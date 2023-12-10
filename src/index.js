@@ -23,6 +23,31 @@ const isPromiseLike = (obj) => {
     );
 }
 
+const walkIteratively = function*(target, config, limit, path = []) {
+  yield [target, path];
+  if (!config.shouldWalk(target, limit)) {
+      return;
+  }
+  const cache = !config.avoidPropertiesCache && config.propertiesCacheMap;
+  const props = getAllProps(target, cache);
+  for (let i = 0; i < props.length; i++) {
+      const prop = props[i];
+      let value;
+      try {
+          value = target[prop];
+      } catch (err) {
+          // TODO: we should walk the error
+          continue;
+      }
+      if (isPromiseLike(value)) {
+          // ignore promise rejections
+          Promise.resolve(value).catch(err => {});
+      }
+      const childPath = [...path, config.generateKey(prop, value)];
+      yield* walkIteratively(value, config, limit - 1, childPath);
+  }
+}
+
 LavaTube.prototype.shouldWalk = function(obj, limit) {
     if (isPrimitive(obj)) {
         return false;
@@ -38,31 +63,6 @@ LavaTube.prototype.shouldWalk = function(obj, limit) {
     }
     this.valuesCacheSet.add(obj);
     return true;
-}
-
-LavaTube.prototype.walkIteratively = function*(target, limit, path = []) {
-    yield [target, path];
-    if (!this.shouldWalk(target, limit)) {
-        return;
-    }
-    const cache = !this.avoidPropertiesCache && this.propertiesCacheMap;
-    const props = getAllProps(target, cache);
-    for (let i = 0; i < props.length; i++) {
-        const prop = props[i];
-        let value;
-        try {
-            value = target[prop];
-        } catch (err) {
-            // TODO: we should walk the error
-            continue;
-        }
-        if (isPromiseLike(value)) {
-            // ignore promise rejections
-            Promise.resolve(value).catch(err => {});
-        }
-        const childPath = [...path, this.generateKey(prop, value)];
-        yield* this.walkIteratively(value, limit - 1, childPath);
-    }
 }
 
 function LavaTube({
@@ -103,7 +103,13 @@ function LavaTube({
 }
 
 LavaTube.prototype.walk = function(start, visitorFn) {
-    for (const [val, keys] of this.walkIteratively(start, this.maxRecursionLimit)) {
+    const config = {
+        shouldWalk: this.shouldWalk.bind(this),
+        generateKey: this.generateKey,
+        avoidPropertiesCache: this.avoidPropertiesCache,
+        propertiesCacheMap: this.propertiesCacheMap,
+    };
+    for (const [val, keys] of walkIteratively(start, config, this.maxRecursionLimit)) {
         if (visitorFn(val, keys)) {
             return true;
         }
