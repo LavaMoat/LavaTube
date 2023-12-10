@@ -40,37 +40,6 @@ LavaTube.prototype.shouldWalk = function(obj, limit) {
     return true;
 }
 
-LavaTube.prototype.walkRecursively = function(obj, visitorFn, limit, keys = [], values = []) {
-    if (!this.shouldWalk(obj, limit)) {
-        return false;
-    }
-    const cache = !this.avoidPropertiesCache && this.propertiesCacheMap;
-    const props = getAllProps(obj, cache);
-    for (let i = 0; i < props.length; i++) {
-        const prop = props[i];
-        let value;
-        try {
-            value = obj[prop];
-        } catch (err) {
-            // TODO: we should walk the error
-            continue;
-        }
-        if (isPromiseLike(value)) {
-            // ignore promise rejections
-            Promise.resolve(value).catch(err => {});
-        }
-        const newKeys = [...keys, this.generateKey(prop, value)];
-        const newValues = [...values, obj];
-        if (
-            this.walkRecursively(value, visitorFn, limit - 1, newKeys, newValues)
-            || visitorFn(value, newKeys)
-        ) {
-            return true;
-        }
-    }
-    return false;
-}
-
 LavaTube.prototype.walkIteratively = function*(obj, limit, keys = [], values = []) {
     yield [obj, keys];
     if (!this.shouldWalk(obj, limit)) {
@@ -136,12 +105,11 @@ function LavaTube({
 }
 
 LavaTube.prototype.walk = function(start, visitorFn) {
-    return this.walkRecursively(start, visitorFn, this.maxRecursionLimit);
-    // for (const [val, keys] of this.walkIteratively(start, this.maxRecursionLimit)) {
-    //     if (visitorFn(val, keys)) {
-    //         return true;
-    //     }
-    // }
+    for (const [val, keys] of this.walkIteratively(start, this.maxRecursionLimit)) {
+        if (visitorFn(val, keys)) {
+            return true;
+        }
+    }
 }
 
 module.exports = LavaTube;
