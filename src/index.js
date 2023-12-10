@@ -47,7 +47,7 @@ LavaTube.prototype.walkRecursively = function(obj, visitorFn, limit, keys = [], 
         const newKeys = [...keys, this.generateKey(prop, val)];
         const newValues = [...values, obj];
         if (
-            this.walkRecursively(val, limit - 1, newKeys, newValues)
+            this.walkRecursively(val, visitorFn, limit - 1, newKeys, newValues)
             || visitorFn(val, newKeys)
         ) {
             return true;
@@ -85,7 +85,7 @@ function LavaTube({
                     valuesCacheSet,
                     propertiesCacheMap,
                     maxRecursionLimit,
-                }) {
+                } = {}) {
     if (typeof generateKey !== 'function') {
         generateKey = (prop, val) => `${({}).toString.call(val)}:${prop}`;
     }
