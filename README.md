@@ -40,5 +40,8 @@ const opts = {
 
     // a function that allows you to skip walking the provided value
     shouldWalk, // [default (target) => true]
+
+    // a function that allows you to reveal additional props for a value (eg Map entries)
+    defaultGetAdditionalProps, // [default handles Map and Set for this Realm]
 };
 ```

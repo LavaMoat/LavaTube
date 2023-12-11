@@ -43,7 +43,7 @@ const getPrototypeChainKeys = (target) => {
     return props;
 }
 
-const getAllProps = (target, shouldInvokeGetters) => {
+const getAllProps = (target, shouldInvokeGetters, getAdditionalProps) => {
     const props = [];
     const proto = Reflect.getPrototypeOf(target);
     if (proto) {
@@ -77,6 +77,10 @@ const getAllProps = (target, shouldInvokeGetters) => {
             continue;
         }
     }
+    const additionalProps = getAdditionalProps(target);
+    if (additionalProps.length > 0) {
+        props.push(...additionalProps);
+    }
     return props;
 }
 
@@ -104,7 +108,7 @@ const walkIteratively = function*(target, config, maxDepth, visited, path) {
         return;
     }
 
-    const props = getAllProps(target, config.shouldInvokeGetters);
+    const props = getAllProps(target, config.shouldInvokeGetters, config.getAdditionalProps);
     for (const [key, value] of props) {
         const childPath = [...path, config.generateKey(key, value)];
         yield* walkIteratively(value, config, maxDepth - 1, visited, childPath);
@@ -116,17 +120,35 @@ const defaultGenerateKey = (key, value) => {
     const valueString = Object.prototype.toString.call(value);
     return `${valueString}:${keyString}`;
 }
+
+const defaultGetAdditionalProps = (target) => {
+    const additionalProps = [];
+    if (target instanceof Map) {
+        for (const [key, value] of target.entries()) {
+            additionalProps.push([`<map key ${keyToString(key)}>`, key]);
+            additionalProps.push([`<map value ${keyToString(key)}>`, value]);
+        }
+    } else if (target instanceof Set) {
+        for (const value of target.values()) {
+            additionalProps.push([`<set value ${keyToString(value)}>`, value]);
+        }
+    }
+    return additionalProps;
+}
+
 export default class LavaTube {
     constructor({
         generateKey = defaultGenerateKey,
         shouldInvokeGetters = true,
         maxRecursionLimit = Infinity,
         shouldWalk = () => true,
+        getAdditionalProps = defaultGetAdditionalProps,
     } = {}) {
         this.config = {
             shouldWalk,
             shouldInvokeGetters,
             generateKey,
+            getAdditionalProps,
         };
         this.maxRecursionLimit = maxRecursionLimit;
         this.visitedSet = new WeakSet();
