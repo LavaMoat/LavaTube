@@ -2,28 +2,46 @@
 
 walk through the proto chain
 
-## demo
+### demo
 
 check out the [demo](https://lavamoat.github.io/LavaTube/demo/)
 
-## install
+### install
 
 `yarn add @lavamoat/lavatube` / `npm install @lavamoat/lavatube`
 
-## use
+### use
 
 ```javascript
 const LavaTube = require('@lavamoat/lavatube');
 
-new LavaTube(opts = {}).walk(start, visitorFn); // example
+const target = window;
+const div = document.createElement('div');
+document.body.appendChild(div);
+const startRef = div;
+
+const lt = new LavaTube();
+// walk by specifying a visitor function
+lt.walk(startRef, visitorFn);
+// or using an iterator
+for (const [value, path] of lt.iterate(startRef)) {
+    if (checkValueForTarget(value, path)) {
+        break;
+    }
+}
 
 new LavaTube({ maxRecursionLimit: 9}).walk(window, (value, path) => {
-    console.log('found value:', value);
-    console.log('path to value was:', path);
-    if (value === 1) {
-        return true; // true means stop lavatube
-    }
+    // returning true stops iteration
+    return checkValueForTarget(value, path);
 });
+
+function checkValueForTarget (value, path) {
+    if (value === target) {
+        console.log('found value:', value);
+        console.log('path to value was:', path);
+        return true;
+    }
+}
 
 // options object can be passed as second argument to LavaTube constructor optionally:
 const opts = {

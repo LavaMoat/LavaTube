@@ -172,15 +172,24 @@ export default class LavaTube {
     }
 
     walk (start, visitorFn) {
-        for (const [val, keys] of walkIterativelyPublic(
+        for (const [value, path] of walkIterativelyPublic(
             start,
             this.config,
             this.maxRecursionLimit,
             this.visitedSet
         )) {
-            if (visitorFn(val, keys)) {
+            if (visitorFn(value, path)) {
                 return true;
             }
         }
+    }
+
+    iterate (start) {
+        return walkIterativelyPublic(
+            start,
+            this.config,
+            this.maxRecursionLimit,
+            this.visitedSet
+        );
     }
 }
