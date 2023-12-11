@@ -56,6 +56,9 @@ const getAllProps = (target, shouldInvokeGetters) => {
             if (propDesc === undefined) {
                 continue;
             }
+            if (propDesc.set !== undefined) {
+                props.push([`<set ${keyToString(key)}>`, propDesc.set]);
+            }
             if (propDesc.get !== undefined) {
                 props.push([`<get ${keyToString(key)}>`, propDesc.get]);
                 if (!shouldInvokeGetters) {
@@ -70,7 +73,7 @@ const getAllProps = (target, shouldInvokeGetters) => {
             }
             props.push([key, value]);
         } catch (err) {
-            props.push([`<get ${keyToString(key)} error>`, err]);
+            props.push([`<get error ${keyToString(key)}>`, err]);
             continue;
         }
     }
