@@ -84,34 +84,51 @@ const getAllProps = (target, shouldInvokeGetters, getAdditionalProps) => {
     return props;
 }
 
-const walkIterativelyPublic = (target, config, maxDepth, visited = new WeakSet(), path = []) => {
-    return walkIteratively(target, config, maxDepth, visited, path);
-}
-
-const walkIteratively = function*(target, config, maxDepth, visited, path) {
+const shouldVisit = (target, visited, shouldWalk) => {
     if (isPrimitive(target)) {
-        return;
+        return false;
     }
 
     if (visited.has(target)) {
-        return;
+        return false;
     }
     visited.add(target);
 
-    if (!config.shouldWalk(target)) {
+    if (!shouldWalk(target)) {
+        return false;
+    }
+
+    return true;
+}
+
+function* walkIterativelyPublic (target, config, maxDepth, visited = new WeakSet(), path = []) {
+    if (!shouldVisit(target, visited, config.shouldWalk)) {
         return;
     }
 
     yield [target, path];
 
+    yield* walkIteratively(target, config, maxDepth, visited, path);
+}
+
+const walkIteratively = function*(target, config, maxDepth, visited, path) {
     if (maxDepth === 0) {
         return;
     }
 
+    const subTrees = [];
     const props = getAllProps(target, config.shouldInvokeGetters, config.getAdditionalProps);
-    for (const [key, value] of props) {
-        const childPath = [...path, config.generateKey(key, value)];
-        yield* walkIteratively(value, config, maxDepth - 1, visited, childPath);
+    for (const [key, childValue] of props) {
+        const childPath = [...path, config.generateKey(key, childValue)];
+        if (!shouldVisit(childValue, visited, config.shouldWalk)) {
+            continue;
+        }
+        yield [childValue, childPath];
+        const subTreeIterator = walkIteratively(childValue, config, maxDepth - 1, visited, childPath);
+        subTrees.push(subTreeIterator);
+    }
+    for (const subTree of subTrees) {
+        yield* subTree;
     }
 }
 
