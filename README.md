@@ -30,7 +30,10 @@ for (const [value, path] of lt.iterate(startRef)) {
     }
 }
 
-new LavaTube({ maxRecursionLimit: 9}).walk(window, (value, path) => {
+// new instance with different options
+new LavaTube({
+    maxRecursionLimit: 9
+}).walk(window, (value, path) => {
     // returning true stops iteration
     return checkValueForTarget(value, path);
 });
@@ -63,3 +66,7 @@ const opts = {
     defaultGetAdditionalProps, // [default handles Map and Set for this Realm]
 };
 ```
+
+###
+
+A LavaTube instance holds the options and a Set of already visited references. If you are walking multiples times with the same LavaMoat instance it will not check previously walked paths. You should almost always create a new LavaTube instance.
