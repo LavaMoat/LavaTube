@@ -1,11 +1,11 @@
 <html>
     <head>
         <script src="https://cdn.jsdelivr.net/npm/treeify/treeify.js"></script>
-        <script src="../dist/lavatube.js"></script>
         <script>
             // load demo
             function start(){
                 const demo = location.search.substr(1);
+                if (!demo) return;
                 const src = './examples/' + demo + '.js';
                 const script = document.createElement('script');
                 script.src = src;

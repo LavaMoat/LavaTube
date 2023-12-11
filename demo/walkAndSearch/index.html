@@ -1,26 +1,8 @@
 <html>
     <head>
-        <script src="../dist/lavatube.js"></script>
-        <script>
-            // load demo
-            function walkAndSearch(start, end){
-                let result = false;
-                new LavaTube().walk(start, (val) => {
-                    return result = result || val === end;
-                });
-                return result;
-            }
-            function walkAndSearchAndLog(start, end) {
-                console.log('Does\n', start, '\nlead to\n', end, '\n?', walkAndSearch(start, end));
-            }
-            setTimeout(walkAndSearchAndLog, 100, window, window);
-            setTimeout(walkAndSearchAndLog, 100, window, document);
-            setTimeout(walkAndSearchAndLog, 100, document, window);
-            setTimeout(walkAndSearchAndLog, 100, document, WebAssembly);
-            setTimeout(walkAndSearchAndLog, 100, WebAssembly, document);
-        </script>
     </head>
     <body>
         <b>open console</b>
+        <script type="module" src="./index.js"></script>
     </body>
 </html>

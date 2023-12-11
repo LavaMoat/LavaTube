@@ -1,3 +1,5 @@
+import LavaTube from '../../src/index.js';
+
 function key(prop, val) { // customize aggregation
     const proto = `${({}).toString.call(val)}`;
     return prop;  // "ownerDocument"
