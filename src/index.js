@@ -85,7 +85,7 @@ const walkIteratively = function*(target, config, maxDepth, visited, path) {
     if (isPrimitive(target)) {
         return;
     }
-    
+
     if (visited.has(target)) {
         return;
     }
@@ -113,7 +113,7 @@ const defaultGenerateKey = (key, value) => {
     const valueString = Object.prototype.toString.call(value);
     return `${valueString}:${keyString}`;
 }
-class LavaTube {
+export default class LavaTube {
     constructor({
         generateKey = defaultGenerateKey,
         shouldInvokeGetters = true,
@@ -142,5 +142,3 @@ class LavaTube {
         }
     }
 }
-
-module.exports = LavaTube;
