@@ -116,7 +116,7 @@ const walkIteratively = function*(target, config, maxDepth, visited, path) {
         return;
     }
 
-    const subTrees = [];
+    const deferredSubTrees = [];
     const props = getAllProps(target, config.shouldInvokeGetters, config.getAdditionalProps);
     for (const [key, childValue] of props) {
         const childPath = [...path, config.generateKey(key, childValue)];
@@ -125,9 +125,13 @@ const walkIteratively = function*(target, config, maxDepth, visited, path) {
         }
         yield [childValue, childPath];
         const subTreeIterator = walkIteratively(childValue, config, maxDepth - 1, visited, childPath);
-        subTrees.push(subTreeIterator);
+        if (config.depthFirst) {
+            yield* subTreeIterator;
+        } else {
+            deferredSubTrees.push(subTreeIterator);
+        }
     }
-    for (const subTree of subTrees) {
+    for (const subTree of deferredSubTrees) {
         yield* subTree;
     }
 }
@@ -160,8 +164,10 @@ export default class LavaTube {
         maxRecursionLimit = Infinity,
         shouldWalk = () => true,
         getAdditionalProps = defaultGetAdditionalProps,
+        depthFirst = false,
     } = {}) {
         this.config = {
+            depthFirst,
             shouldWalk,
             shouldInvokeGetters,
             generateKey,

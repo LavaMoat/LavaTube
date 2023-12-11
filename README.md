@@ -64,6 +64,9 @@ const opts = {
 
     // a function that allows you to reveal additional props for a value (eg Map entries)
     defaultGetAdditionalProps, // [default handles Map and Set for this Realm]
+
+    // a boolean indicating if we should search depth first instead of breadth first
+    depthFirst, // [default false]
 };
 ```
 
