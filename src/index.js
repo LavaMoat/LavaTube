@@ -77,93 +77,68 @@ const getAllProps = (target, shouldInvokeGetters) => {
     return props;
 }
 
-const walkIteratively = function*(target, config, limit, visited = new WeakSet(), path = []) {
+const walkIterativelyPublic = (target, config, maxDepth, visited = new WeakSet(), path = []) => {
+    return walkIteratively(target, config, maxDepth, visited, path);
+}
+
+const walkIteratively = function*(target, config, maxDepth, visited, path) {
     if (isPrimitive(target)) {
         return;
     }
+    
     if (visited.has(target)) {
         return;
     }
     visited.add(target);
 
-    yield [target, path];
-
-    if (limit === 0) {
+    if (!config.shouldWalk(target)) {
         return;
     }
-    if (!config.shouldWalk(target)) {
+
+    yield [target, path];
+
+    if (maxDepth === 0) {
         return;
     }
 
     const props = getAllProps(target, config.shouldInvokeGetters);
     for (const [key, value] of props) {
         const childPath = [...path, config.generateKey(key, value)];
-        yield* walkIteratively(value, config, limit - 1, visited, childPath);
+        yield* walkIteratively(value, config, maxDepth - 1, visited, childPath);
     }
 }
 
-LavaTube.prototype.shouldWalk = function(obj) {
-    if (this.avoidValuesCache) {
-        return true;
-    }
-    return true;
+const defaultGenerateKey = (key, value) => {
+    const keyString = keyToString(key);
+    const valueString = Object.prototype.toString.call(value);
+    return `${valueString}:${keyString}`;
 }
+class LavaTube {
+    constructor({
+        generateKey = defaultGenerateKey,
+        shouldInvokeGetters = true,
+        maxRecursionLimit = Infinity,
+        shouldWalk = () => true,
+    } = {}) {
+        this.config = {
+            shouldWalk,
+            shouldInvokeGetters,
+            generateKey,
+        };
+        this.maxRecursionLimit = maxRecursionLimit;
+        this.visitedSet = new WeakSet();
+    }
 
-function LavaTube({
-                    generateKey,
-                    onShouldIgnoreError,
-                    avoidValuesCache,
-                    avoidPropertiesCache,
-                    valuesCacheSet,
-                    propertiesCacheMap,
-                    maxRecursionLimit,
-                } = {}) {
-    if (typeof generateKey !== 'function') {
-        generateKey = (key, value) => {
-            const keyString = keyToString(key);
-            const valueString = Object.prototype.toString.call(value);
-            return `${valueString}:${keyString}`;
-        }
-    }
-    if (typeof onShouldIgnoreError !== 'function') {
-        onShouldIgnoreError = (prop, obj, error) => { throw error };
-    }
-    if (typeof maxRecursionLimit !== 'number') {
-        maxRecursionLimit = Infinity;
-    }
-    if (!(avoidPropertiesCache = Boolean(avoidPropertiesCache))) {
-        if (typeof propertiesCacheMap !== 'object') {
-            propertiesCacheMap = new Map();
-        }
-    }
-    if (!(avoidValuesCache = Boolean(avoidValuesCache))) {
-        if (typeof valuesCacheSet !== 'object') {
-            valuesCacheSet = new WeakSet();
-        }
-    }
-    this.generateKey = generateKey;
-    this.onShouldIgnoreError = onShouldIgnoreError;
-    this.avoidValuesCache = avoidValuesCache;
-    this.avoidPropertiesCache = avoidPropertiesCache;
-    this.valuesCacheSet = valuesCacheSet;
-    this.propertiesCacheMap = propertiesCacheMap;
-    this.maxRecursionLimit = maxRecursionLimit;
-}
-
-LavaTube.prototype.walk = function(start, visitorFn) {
-    const config = {
-        shouldWalk: this.shouldWalk.bind(this),
-        generateKey: this.generateKey,
-        shouldInvokeGetters: true,
-    };
-    for (const [val, keys] of walkIteratively(
-        start,
-        config,
-        this.maxRecursionLimit,
-        this.valuesCacheSet
-    )) {
-        if (visitorFn(val, keys)) {
-            return true;
+    walk (start, visitorFn) {
+        for (const [val, keys] of walkIterativelyPublic(
+            start,
+            this.config,
+            this.maxRecursionLimit,
+            this.visitedSet
+        )) {
+            if (visitorFn(val, keys)) {
+                return true;
+            }
         }
     }
 }
