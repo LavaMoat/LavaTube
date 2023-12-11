@@ -6,7 +6,7 @@ function key(prop, val) { // customize aggregation
     return proto; // "[object HTMLDocument]"
 }
 
-function tree(src, dst, limit) {
+export default function tree(src, dst, limit) {
     function eachValue(val, path) {
         if (val === dst) {
             let subtree = tree;
@@ -27,4 +27,9 @@ function tree(src, dst, limit) {
     return tree;
 }
 
-export default tree;
+export function showResult (treeString) {
+    const display = document.createElement('pre');
+    display.innerHTML = treeString;
+    document.body.appendChild(display)
+    console.log(treeString);
+}
