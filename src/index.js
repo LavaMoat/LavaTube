@@ -174,7 +174,6 @@ export default class LavaTube {
             getAdditionalProps,
         };
         this.maxRecursionLimit = maxRecursionLimit;
-        this.visitedSet = new WeakSet();
     }
 
     walk (start, visitorFn) {
@@ -182,7 +181,6 @@ export default class LavaTube {
             start,
             this.config,
             this.maxRecursionLimit,
-            this.visitedSet
         )) {
             if (visitorFn(value, path)) {
                 return true;
@@ -195,7 +193,6 @@ export default class LavaTube {
             start,
             this.config,
             this.maxRecursionLimit,
-            this.visitedSet
         );
     }
 }

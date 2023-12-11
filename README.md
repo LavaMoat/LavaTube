@@ -70,6 +70,7 @@ const opts = {
 };
 ```
 
-###
+### note
 
-A LavaTube instance holds the options and a Set of already visited references. If you are walking multiples times with the same LavaMoat instance it will not check previously walked paths. You should almost always create a new LavaTube instance.
+A LavaTube instance holds the options to use when walking.
+It does not cache visited nodes so it is safe for re-use.
