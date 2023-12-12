@@ -27,9 +27,17 @@ export default function tree(src, dst, limit) {
     return tree;
 }
 
+function escape(htmlStr) {
+    return htmlStr.replaceAll(/&/g, "&amp;")
+          .replaceAll(/</g, "&lt;")
+          .replaceAll(/>/g, "&gt;")
+          .replaceAll(/"/g, "&quot;")
+          .replaceAll(/'/g, "&#39;");
+ }
+
 export function showResult (treeString) {
     const display = document.createElement('pre');
-    display.innerHTML = treeString;
+    display.innerHTML = escape(treeString);
     document.body.appendChild(display)
     console.log(treeString);
 }
