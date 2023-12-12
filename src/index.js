@@ -2,12 +2,53 @@ const isPrimitive = (obj) => {
     return !Object.is(obj, Object(obj));
 }
 
+// When working with Proxies they can throw on any operation,
+// so this wrapper of Reflect is used to catch (and ignore) any errors
+// TODO: should likely collect these errors and add to graph
+const ReflectTryCatch = {
+    has: (target, key) => {
+        try {
+            return Reflect.has(target, key);
+        } catch (err) {
+            return false;
+        }
+    },
+    get: (target, key, receiver) => {
+        try {
+            return Reflect.get(target, key, receiver);
+        } catch (err) {
+            return undefined;
+        }
+    },
+    getPrototypeOf: (target) => {
+        try {
+            return Reflect.getPrototypeOf(target);
+        } catch (err) {
+            return null;
+        }
+    },
+    ownKeys: (target) => {
+        try {
+            return Reflect.ownKeys(target);
+        } catch (err) {
+            return [];
+        }
+    },
+    getOwnPropertyDescriptor: (target, key) => {
+        try {
+            return Reflect.getOwnPropertyDescriptor(target, key);
+        } catch (err) {
+            return undefined;
+        }
+    },
+}
+
 const isPromiseLike = (obj) => {
     return (
         typeof obj === 'object' &&
         obj !== null &&
-        'then' in obj &&
-        typeof obj.then === 'function'
+        ReflectTryCatch.has(obj, 'then') &&
+        typeof ReflectTryCatch.get(obj, 'then') === 'function'
     );
 }
 
@@ -21,10 +62,10 @@ const keyToString = (key) => {
 
 const getProtoTypeChain = (target) => {
     const chain = [target];
-    let proto = Reflect.getPrototypeOf(target);
+    let proto = ReflectTryCatch.getPrototypeOf(target);
     while (proto) {
         chain.push(proto);
-        proto = Reflect.getPrototypeOf(proto);
+        proto = ReflectTryCatch.getPrototypeOf(proto);
     }
     return chain;
 }
@@ -33,7 +74,7 @@ const getPrototypeChainKeys = (target) => {
     const props = [];
     const visitedKeys = new Set();
     for (const proto of getProtoTypeChain(target)) {
-        for (const key of Reflect.ownKeys(proto)) {
+        for (const key of ReflectTryCatch.ownKeys(proto)) {
             const isShadowed = visitedKeys.has(key);
             props.push([proto, key, isShadowed]);
 
@@ -53,8 +94,8 @@ const getKeyStringShadowed = (key, isShadowed) => {
 
 const isIterator = (target) => {
     return (
-        Reflect.has(target, 'next') &&
-        typeof target.next === 'function'
+        ReflectTryCatch.has(target, 'next') &&
+        typeof ReflectTryCatch.get(target, 'next') === 'function'
     );
 }
 
@@ -63,19 +104,27 @@ const getIterableValues = (target, realms) => {
     const additionalProps = [];
     // handle Map and Set
     for (const { Map, Set } of realms) {
-        if (target instanceof Map) {
+        let isMap = false;
+        let isSet = false;
+        try {
+            isMap = target instanceof Map;
+            isSet = target instanceof Set;
+        } catch (err) {
+            additionalProps.push([`<instanceof error>`, err]);
+        }
+        if (isMap) {
             for (const [key, value] of target.entries()) {
                 additionalProps.push([`<Map key (${keyToString(key)})>`, key]);
                 additionalProps.push([`<Map value (${keyToString(key)})>`, value]);
             }
-        } else if (target instanceof Set) {
+        } else if (isSet) {
             for (const value of target.values()) {
                 additionalProps.push([`<Set value (${keyToString(value)})>`, value]);
             }
         }
     }
     // handle iterables
-    if (Reflect.has(target, Symbol.iterator) && typeof target[Symbol.iterator] === 'function') {
+    if (ReflectTryCatch.has(target, Symbol.iterator) && typeof target[Symbol.iterator] === 'function') {
         // iterable entries
         let index = 0;
         try {
@@ -117,12 +166,12 @@ const getIterableValues = (target, realms) => {
 
 const getAllProps = (target, shouldInvokeGetters, getAdditionalProps, realms) => {
     const props = [];
-    const proto = Reflect.getPrototypeOf(target);
+    const proto = ReflectTryCatch.getPrototypeOf(target);
     if (proto) {
         props.push(['<prototype>', proto]);
     }
     for (const [proto, key, isShadowed] of getPrototypeChainKeys(target)) {
-        const propDesc = Reflect.getOwnPropertyDescriptor(proto, key);
+        const propDesc = ReflectTryCatch.getOwnPropertyDescriptor(proto, key);
         const keyString = getKeyStringShadowed(key, isShadowed);
         if (propDesc === undefined) {
             continue;
@@ -137,13 +186,13 @@ const getAllProps = (target, shouldInvokeGetters, getAdditionalProps, realms) =>
                 continue;
             }
             try {
-                value = Reflect.get(proto, key, target);
+                value = ReflectTryCatch.get(proto, key, target);
             } catch (err) {
                 props.push([`<get error (${keyString})>`, err]);
                 continue;
             }
             props.push([`<get (${keyString})>`, value]);
-        } else if (Reflect.has(propDesc, 'value')) {
+        } else if (ReflectTryCatch.has(propDesc, 'value')) {
             value = propDesc.value
             props.push([keyString, value]);
         }

@@ -368,6 +368,63 @@ test('cross-realm Symbol.iterator sanity check', t => {
   );
 })
 
+test('handle errors - throwing proxy', t => {
+  const proxy = makeAlwaysThrowProxy({});
+  const target = {}
+  const start = { proxy, target }
+  let allValues;
+  t.notThrows(() => {
+    allValues = getAll({}, start);
+  });
+  t.true(allValues.includes(target));
+  t.true(allValues.includes(proxy));
+})
+
+test('handle errors - function throwing proxy', t => {
+  const proxy = makeAlwaysThrowProxy(() => {});
+  const target = {}
+  const start = { proxy, target }
+  let allValues;
+  t.notThrows(() => {
+    allValues = getAll({}, start);
+  });
+  t.true(allValues.includes(target));
+  t.true(allValues.includes(proxy));
+})
+
+test('handle errors - iterable + iterator throwing proxy', t => {
+  const proxy = makeAlwaysThrowProxy(() => {});
+  const target = {}
+  const start = {
+    proxy,
+    target,
+    next: proxy,
+    [Symbol.iterator]: proxy,
+  }
+  let allValues;
+  t.notThrows(() => {
+    allValues = getAll({}, start);
+  });
+  t.true(allValues.includes(target));
+  t.true(allValues.includes(proxy));
+})
+
+// handle errors like "TypeError: Method get Intl.v8BreakIterator.prototype.next called on incompatible receiver"
+test('handle errors - throw on iterator getter', t => {
+  const target = {}
+  const start = {
+    get next () {
+      throw new Error('throw get next')
+    },
+    target,
+  }
+  let allValues;
+  t.notThrows(() => {
+    allValues = getAll({}, start);
+  });
+  t.true(allValues.includes(target));
+})
+
 
 function find (opts, start, target) {
   let result;
@@ -395,4 +452,54 @@ function makeVmRealm () {
   const sandbox = createContext();
   const vmGlobalThis = runInContext('this', sandbox);
   return vmGlobalThis;
+}
+
+function makeAlwaysThrowProxy (target) {
+  if (typeof target !== 'object' && typeof target !== 'function') {
+    throw new Error('target must be an object');
+  }
+  return new Proxy(target, {
+    get () {
+      throw new Error('always throw proxy: get');
+    },
+    apply () {
+      throw new Error('always throw proxy: apply');
+    },
+    construct () {
+      throw new Error('always throw proxy: construct');
+    },
+    defineProperty () {
+      throw new Error('always throw proxy: defineProperty');
+    },
+    deleteProperty () {
+      throw new Error('always throw proxy: deleteProperty');
+    },
+    get () {
+      throw new Error('always throw proxy: get');
+    },
+    getOwnPropertyDescriptor () {
+      throw new Error('always throw proxy: getOwnPropertyDescriptor');
+    },
+    getPrototypeOf () {
+      throw new Error('always throw proxy: getPrototypeOf');
+    },
+    has () {
+      throw new Error('always throw proxy: has');
+    },
+    isExtensible () {
+      throw new Error('always throw proxy: isExtensible');
+    },
+    ownKeys () {
+      throw new Error('always throw proxy: ownKeys');
+    },
+    preventExtensions () {
+      throw new Error('always throw proxy: preventExtensions');
+    },
+    set () {
+      throw new Error('always throw proxy: set');
+    },
+    setPrototypeOf () {
+      throw new Error('always throw proxy: setPrototypeOf');
+    },
+  });
 }
