@@ -52,10 +52,14 @@ const getKeyStringShadowed = (key, isShadowed) => {
 }
 
 const isIterator = (target) => {
-    return (
-        Reflect.has(target, 'next') &&
-        typeof Object.getOwnPropertyDescriptor(target, 'next')?.get === 'function'
-    );
+    let result = false;
+    if (Reflect.has(target, 'next')) {
+        const desc = Object.getOwnPropertyDescriptor(target, 'next');
+        result =
+            typeof desc?.get === 'function' ||
+            typeof desc?.value === 'function';
+    }
+    return result;
 }
 
 // We include Map and Set in addition to iterables/iterators for better key display
