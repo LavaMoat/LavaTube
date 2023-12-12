@@ -1,3 +1,17 @@
+function getAllFrames(arr, win){
+    for (let i = 0; i < win.length || 0; i++) {
+        getAllFrames(arr, win[i]);
+    }
+    arr.push(win);
+    return arr;
+}
+
+const frames = getAllFrames([], globalThis?.top || globalThis);
+
+const isAnotherWindowProxy = (obj) => {
+    return frames.includes(obj) && obj !== globalThis;
+}
+
 const isPrimitive = (obj) => {
     return !Object.is(obj, Object(obj));
 }
@@ -117,6 +131,9 @@ const getIterableValues = (target, realms) => {
 
 const getAllProps = (target, shouldInvokeGetters, getAdditionalProps, realms) => {
     const props = [];
+    if (isAnotherWindowProxy(target)) {
+        return props;
+    }
     const proto = Reflect.getPrototypeOf(target);
     if (proto) {
         props.push(['<prototype>', proto]);
