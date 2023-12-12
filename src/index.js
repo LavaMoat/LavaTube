@@ -15,7 +15,7 @@ const keyToString = (key) => {
     if (typeof key === 'symbol') {
         return key.toString();
     } else {
-        return Object.prototype.toString.call(key);
+        return `${key}`;
     }
 }
 
@@ -34,13 +34,21 @@ const getPrototypeChainKeys = (target) => {
     const visitedKeys = new Set();
     for (const proto of getProtoTypeChain(target)) {
         for (const key of Reflect.ownKeys(proto)) {
-            if (visitedKeys.has(key)) {
-                continue;
-            }
-            props.push([proto, key]);
+            const isShadowed = visitedKeys.has(key);
+            props.push([proto, key, isShadowed]);
+
+            visitedKeys.add(key);
         }
     }
     return props;
+}
+
+const getKeyStringShadowed = (key, isShadowed) => {
+    if (isShadowed) {
+        return `<shadowed (${keyToString(key)})>`;
+    } else {
+        return keyToString(key);
+    }
 }
 
 const getAllProps = (target, shouldInvokeGetters, getAdditionalProps) => {
@@ -49,32 +57,36 @@ const getAllProps = (target, shouldInvokeGetters, getAdditionalProps) => {
     if (proto) {
         props.push(['<prototype>', proto]);
     }
-    for (const [proto, key] of getPrototypeChainKeys(target)) {
-        let value
-        try {
-            const propDesc = Reflect.getOwnPropertyDescriptor(proto, key);
-            if (propDesc === undefined) {
+    for (const [proto, key, isShadowed] of getPrototypeChainKeys(target)) {
+        const propDesc = Reflect.getOwnPropertyDescriptor(proto, key);
+        const keyString = getKeyStringShadowed(key, isShadowed);
+        if (propDesc === undefined) {
+            continue;
+        }
+        if (propDesc.set !== undefined) {
+            props.push([`<setter (${keyString})>`, propDesc.set]);
+        }
+        let value;
+        if (propDesc.get !== undefined) {
+            props.push([`<getter (${keyString})>`, propDesc.get]);
+            if (!shouldInvokeGetters) {
                 continue;
             }
-            if (propDesc.set !== undefined) {
-                props.push([`<set ${keyToString(key)}>`, propDesc.set]);
+            try {
+                value = Reflect.get(proto, key, target);
+            } catch (err) {
+                props.push([`<get error (${keyString})>`, err]);
+                continue;
             }
-            if (propDesc.get !== undefined) {
-                props.push([`<get ${keyToString(key)}>`, propDesc.get]);
-                if (!shouldInvokeGetters) {
-                    continue;
-                }
-            }
-            value = Reflect.get(proto, key, target);
-            // some values are getters that return promises that reject
-            if (isPromiseLike(value)) {
-                // ignore promise rejection warnings
-                Promise.resolve(value).catch(err => {});
-            }
-            props.push([key, value]);
-        } catch (err) {
-            props.push([`<get error ${keyToString(key)}>`, err]);
-            continue;
+            props.push([`<get (${keyString})>`, value]);
+        } else if (Reflect.has(propDesc, 'value')) {
+            value = propDesc.value
+            props.push([keyString, value]);
+        }
+        // some values are getters that return promises that reject
+        if (isPromiseLike(value)) {
+            // ignore promise rejection warnings
+            Promise.resolve(value).catch(err => {});
         }
     }
     const additionalProps = getAdditionalProps(target);
@@ -254,12 +266,12 @@ const defaultGetAdditionalProps = (target) => {
     const additionalProps = [];
     if (target instanceof Map) {
         for (const [key, value] of target.entries()) {
-            additionalProps.push([`<map key ${keyToString(key)}>`, key]);
-            additionalProps.push([`<map value ${keyToString(key)}>`, value]);
+            additionalProps.push([`<Map key (${keyToString(key)})>`, key]);
+            additionalProps.push([`<Map value (${keyToString(key)})>`, value]);
         }
     } else if (target instanceof Set) {
         for (const value of target.values()) {
-            additionalProps.push([`<set value ${keyToString(value)}>`, value]);
+            additionalProps.push([`<Set value (${keyToString(value)})>`, value]);
         }
     }
     return additionalProps;
