@@ -201,6 +201,51 @@ test('depth 1', t => {
   }
 })
 
+test('depthFirst - visit ordering', t => {
+  const a = Object.create(null);
+  const b = Object.create(null);
+  const c = Object.create(null);
+  const d = Object.create(null);
+  const e = Object.create(null);
+  const f = Object.create(null);
+
+  const start = {
+    __proto__: a,
+    b,
+    c,
+  }
+  a.d = d;
+  d.f = f;
+  b.e = e;
+
+  {
+    const allValues = getAll({}, start);
+    t.deepEqual(allValues, [
+      // indentation shows depth
+      start,
+        a,
+        b,
+        c,
+          d,
+          e,
+            f,
+    ]);
+  }
+  {
+    const allValues = getAll({ depthFirst: true }, start);
+    t.deepEqual(allValues, [
+      // indentation shows depth
+      start,
+        a,
+          d,
+            f,
+        b,
+          e,
+        c,
+    ]);
+  }
+})
+
 test('exhaustiveWeakMapSearch', t => {
   const map = new WeakMap();
   const obj = {};
