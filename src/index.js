@@ -51,8 +51,17 @@ const getKeyStringShadowed = (key, isShadowed) => {
     }
 }
 
-const getMapSetValues = (target, realms) => {
+const isIterator = (target) => {
+    return (
+        Reflect.has(target, 'next') &&
+        typeof target.next === 'function'
+    );
+}
+
+// We include Map and Set in addition to iterables/iterators for better key display
+const getIterableValues = (target, realms) => {
     const additionalProps = [];
+    // handle Map and Set
     for (const { Map, Set } of realms) {
         if (target instanceof Map) {
             for (const [key, value] of target.entries()) {
@@ -65,6 +74,42 @@ const getMapSetValues = (target, realms) => {
             }
         }
     }
+    // handle iterables
+    if (Reflect.has(target, Symbol.iterator) && typeof target[Symbol.iterator] === 'function') {
+        try {
+            additionalProps.push([`<Symbol.iterator>`, target[Symbol.iterator]()]);
+        } catch (err) {
+            additionalProps.push([`<Symbol.iterator error>`, err]);
+        }
+        let index = 0;
+        try {
+            for (const entry of target) {
+                additionalProps.push([`<iterable (${index})>`, entry]);
+                index++;
+            }
+
+        } catch (err) {
+            additionalProps.push([`<iterable error>`, err]);
+        }
+    }
+    // handle iterators
+    if (isIterator(target)) {
+        let index = 0;
+        try {
+            while (true) {
+                const { value, done } = target.next();
+                if (done) {
+                    break;
+                }
+                additionalProps.push([`<iterator (${index})>`, value]);
+                index++;
+            }
+        } catch (err) {
+            additionalProps.push([`<iterator error>`, err]);
+            return additionalProps;
+        }
+    }
+
     return additionalProps;
 }
 
@@ -106,7 +151,7 @@ const getAllProps = (target, shouldInvokeGetters, getAdditionalProps, realms) =>
             Promise.resolve(value).catch(err => {});
         }
     }
-    props.push(...getMapSetValues(target, realms));
+    props.push(...getIterableValues(target, realms));
     const additionalProps = getAdditionalProps(target);
     if (additionalProps.length > 0) {
         props.push(...additionalProps);

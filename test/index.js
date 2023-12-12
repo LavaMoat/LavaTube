@@ -22,11 +22,62 @@ test('find array value', t => {
   t.deepEqual(path, ['0']);
 })
 
-test.failing('find iterator value', t => {
+test('find iterable value', t => {
   const target = {};
-  const start = new Set([target]).values();
+  const values = [target];
+  const start = {
+    [Symbol.iterator] () {
+      return {
+        next () {
+          return {
+            done: values.length === 0,
+            value: values.pop(),
+          };
+        },
+        return () {
+          return {
+            done: true,
+            value: undefined,
+          };
+        },
+        throw () {
+          return {
+            done: true,
+            value: undefined,
+          };
+        }
+      };
+    }
+  };
   const path = find({}, start, target);
-  t.deepEqual(path, ['0']);
+  t.deepEqual(path, ['<iterable (0)>']);
+})
+
+test('find iterator value', t => {
+  const target = {};
+  const values = [target];
+  const start = {
+    next () {
+      return {
+        done: values.length === 0,
+        value: values.pop(),
+      };
+    },
+    return () {
+      return {
+        done: true,
+        value: undefined,
+      };
+    },
+    throw () {
+      return {
+        done: true,
+        value: undefined,
+      };
+    }
+  };
+  const path = find({}, start, target);
+  t.deepEqual(path, ['<iterator (0)>']);
 })
 
 test('find getter fn', t => {
@@ -268,7 +319,7 @@ test('realms - Map value', t => {
 
   {
     const path = find({}, start, target);
-    t.deepEqual(path, undefined);
+    t.deepEqual(path, ['<Symbol.iterator>', '<iterable (0)>', '1']);
   }
   {
     const path = find({ realms: [globalThis, vmGlobalThis] }, start, target);
@@ -309,6 +360,11 @@ test('cross-realm Symbol.iterator sanity check', t => {
   t.deepEqual(
     set[Symbol.iterator](),
     set[vmGlobalThis.Symbol.iterator](),
+  );
+  const foreignSet = vmGlobalThis.eval('new Set([1])');
+  t.deepEqual(
+    set[Symbol.iterator](),
+    foreignSet[Symbol.iterator](),
   );
 })
 
