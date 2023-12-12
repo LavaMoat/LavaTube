@@ -15,6 +15,20 @@ test('find property', t => {
   t.deepEqual(path, ['target']);
 })
 
+test('find array value', t => {
+  const target = {};
+  const start = [target];
+  const path = find({}, start, target);
+  t.deepEqual(path, ['0']);
+})
+
+test.failing('find iterator value', t => {
+  const target = {};
+  const start = new Set([target]).values();
+  const path = find({}, start, target);
+  t.deepEqual(path, ['0']);
+})
+
 test('find getter fn', t => {
   const start = { get target () {} };
   const target = Reflect.getOwnPropertyDescriptor(start, 'target').get;
