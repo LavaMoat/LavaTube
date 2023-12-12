@@ -1,28 +1,27 @@
-# lavatube
+# LavaTube
 
-walk through the proto chain
+Javascript object graph walker. Tries to reach every possible value from a starting reference.
 
 ### demo
 
 check out the [demo](https://lavamoat.github.io/LavaTube/demo/)
 
-### install
-
-`yarn add @lavamoat/lavatube` / `npm install @lavamoat/lavatube`
-
-### use
+### usage
 
 ```javascript
-const LavaTube = require('@lavamoat/lavatube');
+import LavaTube from '@lavamoat/lavatube';
 
+// get starting and target references for your search
 const target = window;
 const div = document.createElement('div');
 document.body.appendChild(div);
 const startRef = div;
 
 const lt = new LavaTube();
+
 // walk by specifying a visitor function
 lt.walk(startRef, visitorFn);
+
 // or using an iterator
 for (const [value, path] of lt.iterate(startRef)) {
     if (checkValueForTarget(value, path)) {
@@ -45,6 +44,46 @@ function checkValueForTarget (value, path) {
         return true;
     }
 }
+```
+
+### limitations
+
+LavaTube works by walking the object graph, including properties and prototypes.
+However, some values are unreachable without calling functions with certain arguments.
+
+```javascript
+// LavaTube would not be able to access "secret" from just the function "get"
+function get(password) {
+    const secret = {}
+    if (password === 's3cr3t') {
+        return secret
+    }
+}
+```
+
+LavaTube does its best to find every value it can, but **consider a negative search result to be "inconclusive"** and not a proof of unreachability. See [this post](https://blog.ankursundara.com/shadow-dom/) for an idea of how something can still be reachable through esoteric means.
+
+Additionally, property getters and Proxies further complicate object graph exploration. They can to return a new value on each access and can also trigger other side effects like adding new properties on objects we've already visited.
+
+```javascript
+const obj = {
+    get abc () {
+        // returns a new object on every access
+        return {}
+    }
+}
+const secret = obj.abc
+// LavaTube will never see the same value as "secret"
+new LavaTube().walk(obj, () => { /* ... */ })
+```
+
+### install
+
+`yarn add @lavamoat/lavatube` / `npm install @lavamoat/lavatube`
+
+### options
+
+```javascript
 
 // options object can be passed as second argument to LavaTube constructor optionally:
 const opts = {
