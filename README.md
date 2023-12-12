@@ -51,7 +51,7 @@ const opts = {
     // a function with which the visited keys during walking 
     // process can be customizd for how they appear within 
     // @path argument (useful for aggregation purposes).
-    generateKey, // [default (key, value) => `${valueString}:${keyString}`]
+    generateKey, // [default (key, value) => key]
     
     // a boolean indicating we should invoke getters
     shouldInvokeGetters, //[default true]

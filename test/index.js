@@ -1,8 +1,6 @@
 import test from 'ava';
 import LavaTube from '../src/index.js';
 
-const generateKey = (key) => key
-
 test('exhaustiveWeakMapSearch', t => {
   const map = new WeakMap();
   const obj = {};
@@ -13,11 +11,10 @@ test('exhaustiveWeakMapSearch', t => {
     obj,
   };
   const opts = {
-    generateKey,
     exhaustiveWeakMapSearch: true,
   }
 
-  const shouldBeMissing = find({ generateKey }, start, secret);
+  const shouldBeMissing = find({}, start, secret);
   t.deepEqual(shouldBeMissing, undefined);
   const shouldBeFound = find(opts, start, secret);
   t.deepEqual(shouldBeFound, [
@@ -43,10 +40,9 @@ test('exhaustiveWeakMapSearch - deep', t => {
   const start = firstWeakMap;
   const opts = {
     exhaustiveWeakMapSearch: true,
-    generateKey,
   }
 
-  const shouldBeMissing = find({ generateKey }, start, secret);
+  const shouldBeMissing = find({}, start, secret);
   t.deepEqual(shouldBeMissing, undefined);
   const shouldBeFound = find(opts, start, secret);
   t.deepEqual(shouldBeFound, [

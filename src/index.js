@@ -117,7 +117,7 @@ const makeQueueFromAppendOnlyMap = (appendOnlyMap) => {
     }
 }
 
-const makeWeakMapTracker = (config) => {
+const makeWeakMapTracker = (generateKey) => {
     const valueToPath = new Map();
     const weakMaps = new Map();
 
@@ -154,7 +154,7 @@ const makeWeakMapTracker = (config) => {
                 // new value found!
                 const childValue = weakMap.get(weakMapKey);
                 const weakMapChildKey = `<weakmap key (${weakMapKeyPath})>`;
-                const childPath = [...weakMapPath, config.generateKey(weakMapChildKey, childValue)];
+                const childPath = [...weakMapPath, generateKey(weakMapChildKey, childValue)];
                 const childMaxDepth = weakMapMaxDepth - 1;
                 yield [childValue, childPath, childMaxDepth]
             }
@@ -200,7 +200,7 @@ function* walkIterativelyPublic (target, config, maxDepth, visited = new Set(), 
 
     let tracker;
     if (config.exhaustiveWeakMapSearch) {
-        tracker = makeWeakMapTracker(config)
+        tracker = makeWeakMapTracker(config.generateKey);
         tracker.visitValue(target, path, maxDepth);
     }
 
@@ -247,12 +247,6 @@ const walkIteratively = function*(target, config, maxDepth, visited, path) {
     }
 }
 
-const defaultGenerateKey = (key, value) => {
-    const keyString = keyToString(key);
-    const valueString = Object.prototype.toString.call(value);
-    return `${valueString}:${keyString}`;
-}
-
 const defaultGetAdditionalProps = (target) => {
     const additionalProps = [];
     if (target instanceof Map) {
@@ -270,7 +264,7 @@ const defaultGetAdditionalProps = (target) => {
 
 export default class LavaTube {
     constructor({
-        generateKey = defaultGenerateKey,
+        generateKey = (key, value) => key,
         shouldInvokeGetters = true,
         maxRecursionLimit = Infinity,
         shouldWalk = () => true,
