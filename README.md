@@ -32,7 +32,7 @@ for (const [value, path] of lt.iterate(startRef)) {
 
 // new instance with different options
 new LavaTube({
-    maxRecursionLimit: 9
+    maxDepth: 9
 }).walk(window, (value, path) => {
     // returning true stops iteration
     return checkValueForTarget(value, path);
@@ -57,7 +57,7 @@ const opts = {
     shouldInvokeGetters, //[default true]
 
     // a number to indicate the maximum recursion depth lavatube is allowed to walk.
-    maxRecursionLimit, // [default Infinity]
+    maxDepth, // [default Infinity]
 
     // a function that allows you to skip walking the provided value
     shouldWalk, // [default (target) => true]

@@ -22,7 +22,7 @@ export default function tree(src, dst, limit) {
     const tree = {};
     new LavaTube({
         generateKey: key,
-        maxRecursionLimit: limit,
+        maxDepth: limit,
     }).walk(src, eachValue);
     return tree;
 }

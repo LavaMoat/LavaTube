@@ -115,6 +115,26 @@ test('non-visitable initial value', t => {
   t.deepEqual(allValues, []);
 })
 
+test('depth 0', t => {
+  const start = { a: {} };
+  const allValues = getAll({ maxDepth: 0 }, start);
+  t.deepEqual(allValues, [start]);
+})
+
+test('depth 1', t => {
+  const target = {};
+  {
+    const start = { target };
+    const path = find({ maxDepth: 1 }, start, target);
+    t.deepEqual(path, ['target']);
+  }
+  {
+    const start = { a: { target } };
+    const path = find({ maxDepth: 1 }, start, target);
+    t.deepEqual(path, undefined);
+  }
+})
+
 test('exhaustiveWeakMapSearch', t => {
   const map = new WeakMap();
   const obj = {};
@@ -133,7 +153,7 @@ test('exhaustiveWeakMapSearch', t => {
   const shouldBeFound = find(opts, start, target);
   t.deepEqual(shouldBeFound, [
     'map',
-    '<weakmap key (obj)>',
+    '<WeakMap value (obj)>',
   ]);
 })
 
@@ -154,7 +174,9 @@ test('exhaustiveWeakMapSearch - non-visitable', t => {
   t.false(allValues.includes(nonVistitable));
 })
 
-test('exhaustiveWeakMapSearch - deep', t => {
+// this test ensures we attempt to access WeakMaps as we discover them,
+// using earlier and newly discovered values as keys
+test('exhaustiveWeakMapSearch - nested', t => {
   const firstWeakMap = new WeakMap()
   let lastWeakMap = firstWeakMap
   const addWeakMap = () => {
@@ -177,11 +199,33 @@ test('exhaustiveWeakMapSearch - deep', t => {
   t.deepEqual(shouldBeMissing, undefined);
   const shouldBeFound = find(opts, start, target);
   t.deepEqual(shouldBeFound, [
-    '<weakmap key ()>',
-    '<weakmap key (<weakmap key ()>)>',
-    '<weakmap key (<weakmap key ()>,<weakmap key (<weakmap key ()>)>)>',
-    '<weakmap key ()>',
+    '<WeakMap value ()>',
+    '<WeakMap value (<WeakMap value ()>)>',
+    '<WeakMap value (<WeakMap value ()>,<WeakMap value (<WeakMap value ()>)>)>',
+    '<WeakMap value ()>',
   ]);
+})
+
+test('exhaustiveWeakMapSearch - depth', t => {
+  const map = new WeakMap();
+  const obj = {};
+  const target = {};
+  map.set(obj, target);
+  const opts = {
+    exhaustiveWeakMapSearch: true,
+    maxDepth: 2,
+  }
+
+  {
+    const start = { map, obj };
+    const path = find(opts, start, target);
+    t.deepEqual(path, ['map', '<WeakMap value (obj)>']);
+  }
+  {
+    const start = { a: { map, obj } };
+    const path = find(opts, start, target);
+    t.deepEqual(path, undefined);
+  }
 })
 
 function find (opts, start, target) {
