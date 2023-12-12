@@ -1,6 +1,12 @@
 import test from 'ava';
 import LavaTube from '../src/index.js';
 
+test('non-visitable initial value', t => {
+  const start = 1;
+  const allValues = getAll({}, start);
+  t.deepEqual(allValues, []);
+})
+
 test('exhaustiveWeakMapSearch', t => {
   const map = new WeakMap();
   const obj = {};
@@ -21,6 +27,23 @@ test('exhaustiveWeakMapSearch', t => {
     'map',
     '<weakmap key (obj)>',
   ]);
+})
+
+test('exhaustiveWeakMapSearch - non-visitable', t => {
+  const map = new WeakMap();
+  const obj = {};
+  const nonVistitable = 'abc'
+  map.set(obj, nonVistitable);
+  const start = {
+    map,
+    obj,
+  };
+  const opts = {
+    exhaustiveWeakMapSearch: true,
+  }
+
+  const allValues = getAll(opts, start);
+  t.false(allValues.includes(nonVistitable));
 })
 
 test('exhaustiveWeakMapSearch - deep', t => {
@@ -62,4 +85,12 @@ function find (opts, start, target) {
     }
   });
   return result;
+}
+
+function getAll (opts, start) {
+  const results = [];
+  new LavaTube(opts).walk(start, (value, path) => {
+    results.push(value);
+  });
+  return results;
 }

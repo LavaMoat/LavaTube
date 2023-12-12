@@ -211,6 +211,9 @@ function* walkIterativelyPublic (target, config, maxDepth, visited = new Set(), 
         // as we discover and walk them, new WeakMaps and references may be discovered
         // the weakMapTracker will continue to iterate them until they are exhausted
         for (const [childValue, childPath, childMaxDepth] of tracker.flushAll()) {
+            if (!shouldVisit(childValue, visited, config.shouldWalk)) {
+                continue;
+            }
             yield [childValue, childPath, childMaxDepth];
             tracker.visitValue(childValue, childPath, childMaxDepth);
             const weakMapValueSubTree = walkIteratively(childValue, config, childMaxDepth, visited, childPath);
@@ -230,10 +233,10 @@ const walkIteratively = function*(target, config, maxDepth, visited, path) {
     const props = getAllProps(target, config.shouldInvokeGetters, config.getAdditionalProps);
     const childMaxDepth = maxDepth - 1;
     for (const [key, childValue] of props) {
-        const childPath = [...path, config.generateKey(key, childValue)];
         if (!shouldVisit(childValue, visited, config.shouldWalk)) {
             continue;
         }
+        const childPath = [...path, config.generateKey(key, childValue)];
         yield [childValue, childPath, childMaxDepth];
         const subTreeIterator = walkIteratively(childValue, config, childMaxDepth, visited, childPath);
         if (config.depthFirst) {
