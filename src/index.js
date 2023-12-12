@@ -54,7 +54,7 @@ const getKeyStringShadowed = (key, isShadowed) => {
 const isIterator = (target) => {
     return (
         Reflect.has(target, 'next') &&
-        typeof target.next === 'function'
+        typeof Object.getOwnPropertyDescriptor(target, 'next')?.get === 'function'
     );
 }
 
