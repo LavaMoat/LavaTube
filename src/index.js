@@ -8,8 +8,13 @@ function getAllFrames(arr, win){
 
 const frames = getAllFrames([], globalThis?.top || globalThis);
 
-const isAnotherWindowProxy = (obj) => {
-    return frames.includes(obj) && obj !== globalThis;
+const isCrossOriginWindowProxy = (obj) => {
+    return (
+        // is actually a window proxy object?
+        frames.includes(obj) &&
+        // is cross-origin?
+        Object.getPrototypeOf.call(globalThis, obj) === null
+    );
 }
 
 const isPrimitive = (obj) => {
@@ -131,7 +136,7 @@ const getIterableValues = (target, realms) => {
 
 const getAllProps = (target, shouldInvokeGetters, getAdditionalProps, realms) => {
     const props = [];
-    if (isAnotherWindowProxy(target)) {
+    if (isCrossOriginWindowProxy(target)) {
         return props;
     }
     const proto = Reflect.getPrototypeOf(target);
