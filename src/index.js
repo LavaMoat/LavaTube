@@ -76,20 +76,22 @@ const getIterableValues = (target, realms) => {
     }
     // handle iterables
     if (Reflect.has(target, Symbol.iterator) && typeof target[Symbol.iterator] === 'function') {
-        try {
-            additionalProps.push([`<Symbol.iterator>`, target[Symbol.iterator]()]);
-        } catch (err) {
-            additionalProps.push([`<Symbol.iterator error>`, err]);
-        }
+        // iterable entries
         let index = 0;
         try {
             for (const entry of target) {
                 additionalProps.push([`<iterable (${index})>`, entry]);
                 index++;
             }
-
         } catch (err) {
             additionalProps.push([`<iterable error>`, err]);
+            return additionalProps;
+        }
+        // iterator itself
+        try {
+            additionalProps.push([`<Symbol.iterator>`, target[Symbol.iterator]()]);
+        } catch (err) {
+            additionalProps.push([`<Symbol.iterator error>`, err]);
         }
     }
     // handle iterators

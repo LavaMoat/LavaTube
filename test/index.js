@@ -319,7 +319,7 @@ test('realms - Map value', t => {
 
   {
     const path = find({}, start, target);
-    t.deepEqual(path, ['<Symbol.iterator>', '<iterable (0)>', '1']);
+    t.deepEqual(path, ['<iterable (0)>', '1']);
   }
   {
     const path = find({ realms: [globalThis, vmGlobalThis] }, start, target);
