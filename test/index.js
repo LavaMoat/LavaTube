@@ -1,4 +1,5 @@
 import test from 'ava';
+import { createContext, runInContext } from 'vm';
 import LavaTube from '../src/index.js';
 
 test('find initial', t => {
@@ -228,6 +229,65 @@ test('exhaustiveWeakMapSearch - depth', t => {
   }
 })
 
+test('cross-realm property', t => {
+  const vmRealm = makeVmRealm();
+  const target = {};
+  const start = vmRealm.Object.create(null);
+  start.target = target;
+  const path = find({}, start, target);
+  t.deepEqual(path, ['target']);
+})
+
+test('cross-realm prototype', t => {
+  const vmRealm = makeVmRealm();
+  const target = {};
+  const start = vmRealm.Object.create(target);
+  const path = find({}, start, target);
+  t.deepEqual(path, ['<prototype>']);
+})
+
+test('realms - Map value', t => {
+  const vmRealm = makeVmRealm();
+  const target = {};
+  const start = vmRealm.eval('new Map()');
+  start.set({}, target);
+
+  {
+    const path = find({}, start, target);
+    t.deepEqual(path, undefined);
+  }
+  {
+    const path = find({ realms: [globalThis, vmRealm] }, start, target);
+    t.deepEqual(path, ['<Map value ([object Object])>']);
+  }
+})
+
+test('realms - WeakMap value', t => {
+  const vmRealm = makeVmRealm();
+  const target = {};
+  const map = vmRealm.eval('new WeakMap()');
+  const obj = {};
+  map.set(obj, target);
+  const start = {
+    map,
+    obj,
+  };
+
+  {
+    const path = find({
+      exhaustiveWeakMapSearch: true,
+    }, start, target);
+    t.deepEqual(path, undefined);
+  }
+  {
+    const path = find({
+      exhaustiveWeakMapSearch: true,
+      realms: [globalThis, vmRealm],
+    }, start, target);
+    t.deepEqual(path, ['map', '<WeakMap value (obj)>']);
+  }
+})
+
 function find (opts, start, target) {
   let result;
   new LavaTube(opts).walk(start, (value, path) => {
@@ -248,4 +308,10 @@ function getAll (opts, start, target) {
     }
   });
   return results;
+}
+
+function makeVmRealm () {
+  const sandbox = createContext();
+  const vmRealm = runInContext('this', sandbox);
+  return vmRealm;
 }

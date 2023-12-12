@@ -62,14 +62,17 @@ const opts = {
     // a function that allows you to skip walking the provided value
     shouldWalk, // [default (target) => true]
 
-    // a function that allows you to reveal additional props for a value (eg Map entries)
-    defaultGetAdditionalProps, // [default handles Map and Set for this Realm]
+    // a function that allows you to reveal additional props for a value (if you have more context on its type you might be able to get additional values by calling its methods)
+    defaultGetAdditionalProps, // [default () => []]
 
     // a boolean indicating if we should search depth first instead of breadth first
     depthFirst, // [default false]
 
     // we cant iterate WeakMaps on their own, but we can take every value that we find and try it as a key each WeakMap
     exhaustiveWeakMapSearch, // [default false]
+
+    // when dealing with multiple Realms, we cant inspect Maps, Sets, or WeakMaps without knowing about the other Realm's named intrinsics. This option allows you to specify these.
+    realms, // [default [globalThis]]
 };
 ```
 

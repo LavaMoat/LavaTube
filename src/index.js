@@ -51,7 +51,24 @@ const getKeyStringShadowed = (key, isShadowed) => {
     }
 }
 
-const getAllProps = (target, shouldInvokeGetters, getAdditionalProps) => {
+const getMapSetValues = (target, realms) => {
+    const additionalProps = [];
+    for (const { Map, Set } of realms) {
+        if (target instanceof Map) {
+            for (const [key, value] of target.entries()) {
+                additionalProps.push([`<Map key (${keyToString(key)})>`, key]);
+                additionalProps.push([`<Map value (${keyToString(key)})>`, value]);
+            }
+        } else if (target instanceof Set) {
+            for (const value of target.values()) {
+                additionalProps.push([`<Set value (${keyToString(value)})>`, value]);
+            }
+        }
+    }
+    return additionalProps;
+}
+
+const getAllProps = (target, shouldInvokeGetters, getAdditionalProps, realms) => {
     const props = [];
     const proto = Reflect.getPrototypeOf(target);
     if (proto) {
@@ -89,6 +106,7 @@ const getAllProps = (target, shouldInvokeGetters, getAdditionalProps) => {
             Promise.resolve(value).catch(err => {});
         }
     }
+    props.push(...getMapSetValues(target, realms));
     const additionalProps = getAdditionalProps(target);
     if (additionalProps.length > 0) {
         props.push(...additionalProps);
@@ -129,7 +147,7 @@ const makeQueueFromAppendOnlyMap = (appendOnlyMap) => {
     }
 }
 
-const makeWeakMapTracker = (generateKey, maxDepth) => {
+const makeWeakMapTracker = (generateKey, maxDepth, realms) => {
     const valueToPath = new Map();
     const weakMaps = new Map();
 
@@ -187,8 +205,10 @@ const makeWeakMapTracker = (generateKey, maxDepth) => {
 
     const visitValue = (value, path, depth) => {
         valueToPath.set(value, path);
-        if (value instanceof WeakMap) {
-            add(value, path, depth);
+        for (const { WeakMap } of realms) {
+            if (value instanceof WeakMap) {
+                add(value, path, depth);
+            }
         }
     }
 
@@ -218,7 +238,7 @@ function* walkIterativelyPublic (target, config, visited = new Set(), path = [])
 
     let tracker;
     if (config.exhaustiveWeakMapSearch) {
-        tracker = makeWeakMapTracker(config.generateKey, config.maxDepth);
+        tracker = makeWeakMapTracker(config.generateKey, config.maxDepth, config.realms);
         tracker.visitValue(target, path, depth);
     }
 
@@ -248,7 +268,7 @@ const walkIteratively = function*(target, config, depth, visited, path) {
     }
 
     const deferredSubTrees = [];
-    const props = getAllProps(target, config.shouldInvokeGetters, config.getAdditionalProps);
+    const props = getAllProps(target, config.shouldInvokeGetters, config.getAdditionalProps, config.realms);
     const childDepth = depth + 1;
     for (const [key, childValue] of props) {
         if (!shouldVisit(childValue, visited, config.shouldWalk)) {
@@ -268,30 +288,16 @@ const walkIteratively = function*(target, config, depth, visited, path) {
     }
 }
 
-const defaultGetAdditionalProps = (target) => {
-    const additionalProps = [];
-    if (target instanceof Map) {
-        for (const [key, value] of target.entries()) {
-            additionalProps.push([`<Map key (${keyToString(key)})>`, key]);
-            additionalProps.push([`<Map value (${keyToString(key)})>`, value]);
-        }
-    } else if (target instanceof Set) {
-        for (const value of target.values()) {
-            additionalProps.push([`<Set value (${keyToString(value)})>`, value]);
-        }
-    }
-    return additionalProps;
-}
-
 export default class LavaTube {
     constructor({
         generateKey = (key, value) => key,
         shouldInvokeGetters = true,
         maxDepth = Infinity,
         shouldWalk = () => true,
-        getAdditionalProps = defaultGetAdditionalProps,
+        getAdditionalProps = () => [],
         depthFirst = false,
         exhaustiveWeakMapSearch = false,
+        realms = [{ Map, Set, WeakMap }],
     } = {}) {
         this.config = {
             depthFirst,
@@ -301,6 +307,7 @@ export default class LavaTube {
             getAdditionalProps,
             exhaustiveWeakMapSearch,
             maxDepth,
+            realms,
         };
     }
 
