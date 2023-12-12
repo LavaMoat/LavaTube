@@ -244,26 +244,26 @@ test('exhaustiveWeakMapSearch - depth', t => {
 })
 
 test('cross-realm property', t => {
-  const vmRealm = makeVmRealm();
+  const vmGlobalThis = makeVmRealm();
   const target = {};
-  const start = vmRealm.Object.create(null);
+  const start = vmGlobalThis.Object.create(null);
   start.target = target;
   const path = find({}, start, target);
   t.deepEqual(path, ['target']);
 })
 
 test('cross-realm prototype', t => {
-  const vmRealm = makeVmRealm();
+  const vmGlobalThis = makeVmRealm();
   const target = {};
-  const start = vmRealm.Object.create(target);
+  const start = vmGlobalThis.Object.create(target);
   const path = find({}, start, target);
   t.deepEqual(path, ['<prototype>']);
 })
 
 test('realms - Map value', t => {
-  const vmRealm = makeVmRealm();
+  const vmGlobalThis = makeVmRealm();
   const target = {};
-  const start = vmRealm.eval('new Map()');
+  const start = vmGlobalThis.eval('new Map()');
   start.set({}, target);
 
   {
@@ -271,15 +271,15 @@ test('realms - Map value', t => {
     t.deepEqual(path, undefined);
   }
   {
-    const path = find({ realms: [globalThis, vmRealm] }, start, target);
+    const path = find({ realms: [globalThis, vmGlobalThis] }, start, target);
     t.deepEqual(path, ['<Map value ([object Object])>']);
   }
 })
 
 test('realms - WeakMap value', t => {
-  const vmRealm = makeVmRealm();
+  const vmGlobalThis = makeVmRealm();
   const target = {};
-  const map = vmRealm.eval('new WeakMap()');
+  const map = vmGlobalThis.eval('new WeakMap()');
   const obj = {};
   map.set(obj, target);
   const start = {
@@ -296,11 +296,22 @@ test('realms - WeakMap value', t => {
   {
     const path = find({
       exhaustiveWeakMapSearch: true,
-      realms: [globalThis, vmRealm],
+      realms: [globalThis, vmGlobalThis],
     }, start, target);
     t.deepEqual(path, ['map', '<WeakMap value (obj)>']);
   }
 })
+
+test('cross-realm Symbol.iterator sanity check', t => {
+  const vmGlobalThis = makeVmRealm();
+  const set = new Set([1]);
+  t.is(Symbol.iterator, vmGlobalThis.Symbol.iterator);
+  t.deepEqual(
+    set[Symbol.iterator](),
+    set[vmGlobalThis.Symbol.iterator](),
+  );
+})
+
 
 function find (opts, start, target) {
   let result;
@@ -326,6 +337,6 @@ function getAll (opts, start, target) {
 
 function makeVmRealm () {
   const sandbox = createContext();
-  const vmRealm = runInContext('this', sandbox);
-  return vmRealm;
+  const vmGlobalThis = runInContext('this', sandbox);
+  return vmGlobalThis;
 }
