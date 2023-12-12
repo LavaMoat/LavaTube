@@ -101,14 +101,124 @@ const shouldVisit = (target, visited, shouldWalk) => {
     return true;
 }
 
-function* walkIterativelyPublic (target, config, maxDepth, visited = new WeakSet(), path = []) {
+const makeQueueFromAppendOnlyMap = (appendOnlyMap) => {
+    const iterator = appendOnlyMap.entries()
+    let index = 0
+    const isEmpty = () => appendOnlyMap.size === index
+    const flush = function* () {
+        while (!isEmpty()) {
+            yield iterator.next().value
+            index++
+        }
+    }
+    return {
+        flush,
+        isEmpty,
+    }
+}
+
+const makeWeakMapTracker = (config) => {
+    const valueToPath = new Map();
+    const weakMaps = new Map();
+
+    const add = (weakMap, path, maxDepth) => {
+        if (weakMaps.has(weakMap)) {
+            return;
+        }
+        const queue = makeQueueFromAppendOnlyMap(valueToPath);
+        weakMaps.set(weakMap, {
+            queue,
+            path,
+            maxDepth,
+        });
+    }
+
+    const allEmpty = () => {
+        for (const { queue } of weakMaps.values()) {
+            if (!queue.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function* flushAllOnce () {
+        for (const [weakMap, { queue, path: weakMapPath, maxDepth: weakMapMaxDepth }] of weakMaps.entries()) {
+            if (queue.isEmpty()) {
+                continue;
+            }
+            for (const [weakMapKey, weakMapKeyPath] of queue.flush()) {
+                if (!weakMap.has(weakMapKey)) {
+                    continue;
+                }
+                // new value found!
+                const childValue = weakMap.get(weakMapKey);
+                const weakMapChildKey = `<weakmap key (${weakMapKeyPath})>`;
+                const childPath = [...weakMapPath, config.generateKey(weakMapChildKey, childValue)];
+                const childMaxDepth = weakMapMaxDepth - 1;
+                yield [childValue, childPath, childMaxDepth]
+            }
+        }
+    }
+
+    // flushing queues can result in queues being repopulated
+    // so we need to keep flushing until all queues are empty
+    function* flushAll () {
+        while (!allEmpty()) {
+            yield* flushAllOnce()
+        }
+    }
+
+    const visitValue = (value, path, maxDepth) => {
+        valueToPath.set(value, path);
+        if (value instanceof WeakMap) {
+            add(value, path, maxDepth);
+        }
+    }
+
+    return {
+        add,
+        visitValue,
+        flushAll,
+    }
+}
+
+function* iterateAndTrack (subTree, tracker) {
+    for (const [value, path, maxDepth] of subTree) {
+        yield [value, path, maxDepth];
+        tracker.visitValue(value, path, maxDepth);
+    }
+}
+
+
+function* walkIterativelyPublic (target, config, maxDepth, visited = new Set(), path = []) {
     if (!shouldVisit(target, visited, config.shouldWalk)) {
         return;
     }
 
     yield [target, path];
 
-    yield* walkIteratively(target, config, maxDepth, visited, path);
+    let tracker;
+    if (config.exhaustiveWeakMapSearch) {
+        tracker = makeWeakMapTracker(config)
+        tracker.visitValue(target, path, maxDepth);
+    }
+
+    const subTree = walkIteratively(target, config, maxDepth, visited, path);
+    if (config.exhaustiveWeakMapSearch) {
+        yield* iterateAndTrack(subTree, tracker)
+        // check for any values found inside the collected weakMaps
+        // as we discover and walk them, new WeakMaps and references may be discovered
+        // the weakMapTracker will continue to iterate them until they are exhausted
+        for (const [childValue, childPath, childMaxDepth] of tracker.flushAll()) {
+            yield [childValue, childPath, childMaxDepth];
+            tracker.visitValue(childValue, childPath, childMaxDepth);
+            const weakMapValueSubTree = walkIteratively(childValue, config, childMaxDepth, visited, childPath);
+            yield* iterateAndTrack(weakMapValueSubTree, tracker);
+        }
+    } else {
+        yield* subTree;
+    }
 }
 
 const walkIteratively = function*(target, config, maxDepth, visited, path) {
@@ -118,13 +228,14 @@ const walkIteratively = function*(target, config, maxDepth, visited, path) {
 
     const deferredSubTrees = [];
     const props = getAllProps(target, config.shouldInvokeGetters, config.getAdditionalProps);
+    const childMaxDepth = maxDepth - 1;
     for (const [key, childValue] of props) {
         const childPath = [...path, config.generateKey(key, childValue)];
         if (!shouldVisit(childValue, visited, config.shouldWalk)) {
             continue;
         }
-        yield [childValue, childPath];
-        const subTreeIterator = walkIteratively(childValue, config, maxDepth - 1, visited, childPath);
+        yield [childValue, childPath, childMaxDepth];
+        const subTreeIterator = walkIteratively(childValue, config, childMaxDepth, visited, childPath);
         if (config.depthFirst) {
             yield* subTreeIterator;
         } else {
@@ -165,6 +276,7 @@ export default class LavaTube {
         shouldWalk = () => true,
         getAdditionalProps = defaultGetAdditionalProps,
         depthFirst = false,
+        exhaustiveWeakMapSearch = false,
     } = {}) {
         this.config = {
             depthFirst,
@@ -172,6 +284,7 @@ export default class LavaTube {
             shouldInvokeGetters,
             generateKey,
             getAdditionalProps,
+            exhaustiveWeakMapSearch,
         };
         this.maxRecursionLimit = maxRecursionLimit;
     }

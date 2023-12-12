@@ -67,6 +67,9 @@ const opts = {
 
     // a boolean indicating if we should search depth first instead of breadth first
     depthFirst, // [default false]
+
+    // we cant iterate WeakMaps on their own, but we can take every value that we find and try it as a key each WeakMap
+    exhaustiveWeakMapSearch, // [default false]
 };
 ```
 
