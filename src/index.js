@@ -164,7 +164,15 @@ const getIterableValues = (target, realms) => {
     return additionalProps;
 }
 
-const getAllProps = (target, shouldInvokeGetters, getAdditionalProps, realms) => {
+const silencePromiseRejection = (value) => {
+    if (isPromiseLike(value)) {
+        // ignore promise rejection warnings
+        Promise.resolve(value).catch(err => {});
+    }
+}
+
+const getAllProps = (target, config) => {
+    const { shouldInvokeGetters, shouldCallFunctions, getAdditionalProps, realms } = config;
     const props = [];
     const proto = ReflectTryCatch.getPrototypeOf(target);
     if (proto) {
@@ -197,9 +205,14 @@ const getAllProps = (target, shouldInvokeGetters, getAdditionalProps, realms) =>
             props.push([keyString, value]);
         }
         // some values are getters that return promises that reject
-        if (isPromiseLike(value)) {
-            // ignore promise rejection warnings
-            Promise.resolve(value).catch(err => {});
+        silencePromiseRejection(value);
+    }
+    if (shouldCallFunctions && typeof target === 'function') {
+        try {
+            const result = Reflect.apply(target, target, []);
+            props.push([`<function return value>`, result]);
+        } catch (err) {
+            props.push([`<function error>`, err]);
         }
     }
     props.push(...getIterableValues(target, realms));
@@ -323,24 +336,26 @@ function* iterateAndTrack (subTree, tracker) {
 }
 
 const makeConfig = ({
-    generateKey = (key, value) => key,
     shouldInvokeGetters = true,
-    maxDepth = Infinity,
-    shouldWalk = () => true,
-    getAdditionalProps = () => [],
-    depthFirst = false,
+    shouldCallFunctions = false,
     exhaustiveWeakMapSearch = false,
+    shouldWalk = () => true,
+    maxDepth = Infinity,
+    depthFirst = false,
+    getAdditionalProps = () => [],
     realms = [{ Map, Set, WeakMap }],
+    generateKey = (key, value) => key,
 } = {}) => {
     return {
-        generateKey,
         shouldInvokeGetters,
-        maxDepth,
-        shouldWalk,
-        getAdditionalProps,
-        depthFirst,
+        shouldCallFunctions,
         exhaustiveWeakMapSearch,
+        shouldWalk,
+        maxDepth,
+        depthFirst,
+        getAdditionalProps,
         realms,
+        generateKey,
     };
 }
 
@@ -386,7 +401,7 @@ const walkIteratively = function*(target, config, depth, visited, path) {
     }
 
     const deferredSubTrees = [];
-    const props = getAllProps(target, config.shouldInvokeGetters, config.getAdditionalProps, config.realms);
+    const props = getAllProps(target, config);
     const childDepth = depth + 1;
     for (const [key, childValue] of props) {
         if (!shouldVisit(childValue, visited, config.shouldWalk)) {

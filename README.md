@@ -94,30 +94,32 @@ LavaTube.walk(obj, () => { /* ... */ })
 
 // configuration options object:
 const opts = {
-    // a function with which the visited keys during walking 
-    // process can be customizd for how they appear within 
-    // @path argument (useful for aggregation purposes).
-    generateKey, // [default (key, value) => key]
-    
     // a boolean indicating we should invoke getters
-    shouldInvokeGetters, //[default true]
+    shouldInvokeGetters, //[default: true]
 
-    // a number to indicate the maximum recursion depth lavatube is allowed to walk.
-    maxDepth, // [default Infinity]
-
-    // a function that allows you to skip walking the provided value
-    shouldWalk, // [default (target) => true]
-
-    // a function that allows you to reveal additional props for a value (if you have more context on its type you might be able to get additional values by calling its methods)
-    getAdditionalProps, // [default () => []]
-
-    // a boolean indicating if we should search depth first instead of breadth first
-    depthFirst, // [default false]
+    // a boolean indicating if we should attempt to call all visited functions with no arguments
+    shouldCallFunctions, // [default: false]
 
     // we cant iterate WeakMaps on their own, but we can take every value that we find and try it as a key each WeakMap
-    exhaustiveWeakMapSearch, // [default false]
+    exhaustiveWeakMapSearch, // [default: false]
+
+    // a function that allows you to skip walking the provided value
+    shouldWalk, // [default: (target) => true]
+
+    // a number to indicate the maximum recursion depth LavaTube is allowed to walk.
+    maxDepth, // [default: Infinity]
+
+    // a boolean indicating if we should search depth first instead of breadth first.
+    // potentially useful when looking for a distantly connected value
+    depthFirst, // [default: false]
+
+    // a function that allows you to reveal additional props for a value (if you have more context on its type you might be able to get additional values by calling its methods)
+    getAdditionalProps, // [default: () => []]
 
     // when dealing with multiple Realms, we cant inspect Maps, Sets, or WeakMaps without knowing about the other Realm's named intrinsics. This option allows you to specify these.
-    realms, // [default [globalThis]]
+    realms, // [default: [globalThis]]
+
+    // a function for modifying how the path segment strings are generated.
+    generateKey, // [default: (key, value) => key]
 };
 ```

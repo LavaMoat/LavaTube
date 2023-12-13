@@ -175,6 +175,24 @@ test('find Set value', t => {
   t.deepEqual(path, ['<Set value ([object Object])>']);
 })
 
+test('find function return value', t => {
+  const target = {};
+  const start = { get() { return target } };
+  {
+    const path = LavaTube.find(start, target);
+    t.deepEqual(path, undefined);
+  }
+  {
+    const path = LavaTube.find(start, target, {
+      shouldCallFunctions: true,
+    });
+    t.deepEqual(path, [
+      'get',
+      '<function return value>',
+    ]);
+  }
+})
+
 test('non-visitable initial value', t => {
   const start = 1;
   const allValues = LavaTube.getAllValues(start);
