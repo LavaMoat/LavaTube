@@ -397,7 +397,7 @@ test('cross-realm prototype', t => {
   t.deepEqual(path, ['<prototype>']);
 })
 
-test('realms - Map value', t => {
+test('globalThese - Map value', t => {
   const vmGlobalThis = makeVmRealm();
   const target = {};
   const start = vmGlobalThis.eval('new Map()');
@@ -408,12 +408,12 @@ test('realms - Map value', t => {
     t.deepEqual(path, ['<iterable (0)>', '1']);
   }
   {
-    const path = LavaTube.find(start, target, { realms: [globalThis, vmGlobalThis] });
+    const path = LavaTube.find(start, target, { globalThese: [globalThis, vmGlobalThis] });
     t.deepEqual(path, ['<Map value ([object Object])>']);
   }
 })
 
-test('realms - WeakMap value', t => {
+test('globalThese - WeakMap value', t => {
   const vmGlobalThis = makeVmRealm();
   const target = {};
   const map = vmGlobalThis.eval('new WeakMap()');
@@ -433,7 +433,7 @@ test('realms - WeakMap value', t => {
   {
     const path = LavaTube.find(start, target, {
       shouldBruteForceWeakMaps: true,
-      realms: [globalThis, vmGlobalThis],
+      globalThese: [globalThis, vmGlobalThis],
     });
     t.deepEqual(path, ['map', '<WeakMap value (obj)>']);
   }

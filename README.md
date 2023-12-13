@@ -119,8 +119,8 @@ const opts = {
     // a function that allows you to reveal additional props for a value (if you have more context on its type you might be able to get additional values by calling its methods)
     getAdditionalProps, // [default: () => []]
 
-    // when dealing with multiple Realms, we cant inspect Maps, Sets, or WeakMaps without knowing about the other Realm's named intrinsics. This option allows you to specify these.
-    realms, // [default: [globalThis]]
+    // when dealing with multiple Realms (eg browser: iframes, node: vms), we cant inspect Maps, Sets, or WeakMaps without knowing about the other Realm's named intrinsics. This option allows you to specify all known Realm globalThis objects.
+    globalThese, // [default: [globalThis]]
 
     // a function for modifying how the path segment strings are generated.
     generateKey, // [default: (key, value) => key]

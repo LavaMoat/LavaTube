@@ -100,10 +100,10 @@ const isIterator = (target) => {
 }
 
 // We include Map and Set in addition to iterables/iterators for better key display
-const getIterableValues = (target, realms) => {
+const getIterableValues = (target, globalThese) => {
     const additionalProps = [];
     // handle Map and Set
-    for (const { Map, Set } of realms) {
+    for (const { Map, Set } of globalThese) {
         let isMap = false;
         let isSet = false;
         try {
@@ -180,7 +180,7 @@ const getAllProps = (target, config) => {
         shouldCallFunctions,
         shouldConstructFunctions,
         getAdditionalProps,
-        realms
+        globalThese
     } = config;
     const props = [];
     const proto = ReflectTryCatch.getPrototypeOf(target);
@@ -234,7 +234,7 @@ const getAllProps = (target, config) => {
             }
         }
     }
-    props.push(...getIterableValues(target, realms));
+    props.push(...getIterableValues(target, globalThese));
     const additionalProps = getAdditionalProps(target);
     if (additionalProps.length > 0) {
         props.push(...additionalProps);
@@ -275,7 +275,7 @@ const makeQueueFromAppendOnlyMap = (appendOnlyMap) => {
     }
 }
 
-const makeWeakMapTracker = (generateKey, maxDepth, realms) => {
+const makeWeakMapTracker = (generateKey, maxDepth, globalThese) => {
     const valueToPath = new Map();
     const weakMaps = new Map();
 
@@ -333,7 +333,7 @@ const makeWeakMapTracker = (generateKey, maxDepth, realms) => {
 
     const visitValue = (value, path, depth) => {
         valueToPath.set(value, path);
-        for (const { WeakMap } of realms) {
+        for (const { WeakMap } of globalThese) {
             if (value instanceof WeakMap) {
                 add(value, path, depth);
             }
@@ -363,7 +363,7 @@ const makeConfig = ({
     maxDepth = Infinity,
     depthFirst = false,
     getAdditionalProps = () => [],
-    realms = [{ Map, Set, WeakMap }],
+    globalThese = [{ Map, Set, WeakMap }],
     generateKey = (key, value) => key,
 } = {}) => {
     return {
@@ -375,7 +375,7 @@ const makeConfig = ({
         maxDepth,
         depthFirst,
         getAdditionalProps,
-        realms,
+        globalThese,
         generateKey,
     };
 }
@@ -392,7 +392,7 @@ function* walkIterativelyEntry (target, opts, visited = new Set(), path = []) {
 
     let tracker;
     if (config.shouldBruteForceWeakMaps) {
-        tracker = makeWeakMapTracker(config.generateKey, config.maxDepth, config.realms);
+        tracker = makeWeakMapTracker(config.generateKey, config.maxDepth, config.globalThese);
         tracker.visitValue(target, path, depth);
     }
 
