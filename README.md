@@ -97,8 +97,11 @@ const opts = {
     // a boolean indicating we should invoke getters
     shouldInvokeGetters, //[default: true]
 
-    // a boolean indicating if we should attempt to call all visited functions with no arguments
+    // a boolean indicating if we should attempt to call all visited functions (with no arguments).
     shouldCallFunctions, // [default: false]
+
+    // a boolean indicating if we should attempt to construct (new Thing()) all visited functions (with no arguments).
+    shouldConstructFunctions, // [default: false]
 
     // we cant iterate WeakMaps on their own, but we can take every value that we find and try it as a key each WeakMap
     shouldBruteForceWeakMaps, // [default: false]

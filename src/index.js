@@ -175,7 +175,13 @@ const silencePromiseRejection = (value) => {
 }
 
 const getAllProps = (target, config) => {
-    const { shouldInvokeGetters, shouldCallFunctions, getAdditionalProps, realms } = config;
+    const {
+        shouldInvokeGetters,
+        shouldCallFunctions,
+        shouldConstructFunctions,
+        getAdditionalProps,
+        realms
+    } = config;
     const props = [];
     const proto = ReflectTryCatch.getPrototypeOf(target);
     if (proto) {
@@ -210,12 +216,22 @@ const getAllProps = (target, config) => {
         // some values are getters that return promises that reject
         silencePromiseRejection(value);
     }
-    if (shouldCallFunctions && typeof target === 'function') {
-        try {
-            const result = Reflect.apply(target, target, []);
-            props.push([`<function return value>`, result]);
-        } catch (err) {
-            props.push([`<function error>`, err]);
+    if (typeof target === 'function') {
+        if (shouldCallFunctions) {
+            try {
+                const result = Reflect.apply(target, target, []);
+                props.push([`<function return value>`, result]);
+            } catch (err) {
+                props.push([`<function error>`, err]);
+            }
+        }
+        if (shouldConstructFunctions) {
+            try {
+                const result = Reflect.construct(target, []);
+                props.push([`<constructor return value>`, result]);
+            } catch (err) {
+                props.push([`<constructor error>`, err]);
+            }
         }
     }
     props.push(...getIterableValues(target, realms));
@@ -341,6 +357,7 @@ function* iterateAndTrack (subTree, tracker) {
 const makeConfig = ({
     shouldInvokeGetters = true,
     shouldCallFunctions = false,
+    shouldConstructFunctions = false,
     shouldBruteForceWeakMaps = false,
     shouldWalk = () => true,
     maxDepth = Infinity,
@@ -352,6 +369,7 @@ const makeConfig = ({
     return {
         shouldInvokeGetters,
         shouldCallFunctions,
+        shouldConstructFunctions,
         shouldBruteForceWeakMaps,
         shouldWalk,
         maxDepth,

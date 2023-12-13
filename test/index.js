@@ -193,6 +193,29 @@ test('find function return value', t => {
   }
 })
 
+test('find constructor value', t => {
+  const target = {};
+  const start = new Proxy(function () {}, {
+    construct () {
+      return target;
+    }
+  });
+  {
+    const path = LavaTube.find(start, target, {
+      shouldCallFunctions: true,
+    });
+    t.deepEqual(path, undefined);
+  }
+  {
+    const path = LavaTube.find(start, target, {
+      shouldConstructFunctions: true,
+    });
+    t.deepEqual(path, [
+      '<constructor return value>',
+    ]);
+  }
+})
+
 test('non-visitable initial value', t => {
   const start = 1;
   const allValues = LavaTube.getAllValues(start);
