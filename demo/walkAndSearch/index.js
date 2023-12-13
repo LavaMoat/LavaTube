@@ -15,7 +15,7 @@ function showResult (start, end, result) {
 
 function walkAndSearch(start, end){
     let result = false;
-    new LavaTube().walk(start, (val) => {
+    LavaTube.walk(start, (val) => {
         return result = result || val === end;
     });
     return result;

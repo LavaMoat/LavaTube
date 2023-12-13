@@ -20,10 +20,10 @@ export default function tree(src, dst, limit) {
     }
 
     const tree = {};
-    new LavaTube({
+    LavaTube.walk(src, eachValue, {
         generateKey: key,
         maxDepth: limit,
-    }).walk(src, eachValue);
+    });
     return tree;
 }
 

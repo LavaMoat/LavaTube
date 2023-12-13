@@ -322,9 +322,31 @@ function* iterateAndTrack (subTree, tracker) {
     }
 }
 
+const makeConfig = ({
+    generateKey = (key, value) => key,
+    shouldInvokeGetters = true,
+    maxDepth = Infinity,
+    shouldWalk = () => true,
+    getAdditionalProps = () => [],
+    depthFirst = false,
+    exhaustiveWeakMapSearch = false,
+    realms = [{ Map, Set, WeakMap }],
+} = {}) => {
+    return {
+        generateKey,
+        shouldInvokeGetters,
+        maxDepth,
+        shouldWalk,
+        getAdditionalProps,
+        depthFirst,
+        exhaustiveWeakMapSearch,
+        realms,
+    };
+}
 
-function* walkIterativelyPublic (target, config, visited = new Set(), path = []) {
+function* walkIterativelyEntry (target, opts, visited = new Set(), path = []) {
     const depth = 0
+    const config = makeConfig(opts);
 
     if (!shouldVisit(target, visited, config.shouldWalk)) {
         return;
@@ -384,44 +406,46 @@ const walkIteratively = function*(target, config, depth, visited, path) {
     }
 }
 
-export default class LavaTube {
-    constructor({
-        generateKey = (key, value) => key,
-        shouldInvokeGetters = true,
-        maxDepth = Infinity,
-        shouldWalk = () => true,
-        getAdditionalProps = () => [],
-        depthFirst = false,
-        exhaustiveWeakMapSearch = false,
-        realms = [{ Map, Set, WeakMap }],
-    } = {}) {
-        this.config = {
-            depthFirst,
-            shouldWalk,
-            shouldInvokeGetters,
-            generateKey,
-            getAdditionalProps,
-            exhaustiveWeakMapSearch,
-            maxDepth,
-            realms,
-        };
-    }
+// public API
 
-    walk (start, visitorFn) {
-        for (const [value, path] of walkIterativelyPublic(
-            start,
-            this.config,
-        )) {
-            if (visitorFn(value, path)) {
-                return true;
-            }
+export const iterate = (start, opts) => {
+    return walkIterativelyEntry(start, opts);
+}
+
+export const walk = (start, visitorFn, opts) => {
+    for (const [value, path] of walkIterativelyEntry(
+        start,
+        opts,
+    )) {
+        if (visitorFn(value, path)) {
+            return { value, path };
         }
     }
+}
 
-    iterate (start) {
-        return walkIterativelyPublic(
-            start,
-            this.config,
-        );
+export const getAllValues = (start, opts) => {
+    const results = [];
+    walk(start, (value) => {
+        results.push(value);
+    }, opts);
+    return results;
+}
+
+export const find = (start, target, opts) => {
+    const result = walk(start, (value) => {
+        if (value === target) {
+            return true;
+        }
+    }, opts);
+    if (result !== undefined) {
+        return result.path;
     }
+    return undefined;
+}
+
+export default {
+    iterate,
+    walk,
+    getAllValues,
+    find,
 }

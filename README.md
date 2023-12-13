@@ -17,33 +17,40 @@ const div = document.createElement('div');
 document.body.appendChild(div);
 const startRef = div;
 
-const lt = new LavaTube();
+// use "find" when looking for a path to a specific value
+const path = LavaTube.find(startRef, target);
 
-// walk by specifying a visitor function
-lt.walk(startRef, visitorFn);
-
-// or using an iterator
-for (const [value, path] of lt.iterate(startRef)) {
-    if (checkValueForTarget(value, path)) {
-        break;
-    }
+// use "walk" to visit every value by specifying a visitor function
+// the visitor can return "true" to stop iteration and select the
+// current value and path as the final result
+const result = LavaTube.walk(startRef, checkValueForTarget);
+if (result !== undefined) {
+  const { value, path } = result;
+  console.log(`found ${value} at ${path}`)
 }
 
-// new instance with different options
-new LavaTube({
-    maxDepth: 9
-}).walk(window, (value, path) => {
-    // returning true stops iteration
-    return checkValueForTarget(value, path);
-});
+// use "iterate" to get an iterator for visiting values
+for (const [value, path] of LavaTube.iterate(startRef)) {
+  if (checkValueForTarget(value, path)) {
+    console.log(`found ${value} at ${path}`)
+    break;
+  }
+}
+
+// configuration options can be specified as well
+const opts = { maxDepth: 9 }
+LavaTube.walk(window, (value, path) => {
+  return checkValueForTarget(value, path);
+}, opts);
 
 function checkValueForTarget (value, path) {
-    if (value === target) {
-        console.log('found value:', value);
-        console.log('path to value was:', path);
-        return true;
-    }
+  if (value === target) {
+    console.log(`found ${value} at ${path}`)
+    return true;
+  }
+  return false;
 }
+
 ```
 
 ### limitations
@@ -54,10 +61,10 @@ However, some values are unreachable without calling functions with certain argu
 ```javascript
 // LavaTube would not be able to access "secret" from just the function "get"
 function get(password) {
-    const secret = {}
-    if (password === 's3cr3t') {
-        return secret
-    }
+  const secret = {}
+  if (password === 's3cr3t') {
+    return secret
+  }
 }
 ```
 
@@ -67,14 +74,14 @@ Additionally, property getters and Proxies further complicate object graph explo
 
 ```javascript
 const obj = {
-    get abc () {
-        // returns a new object on every access
-        return {}
-    }
+  get abc () {
+    // returns a new object on every access
+    return {}
+  }
 }
 const secret = obj.abc
 // LavaTube will never see the same value as "secret"
-new LavaTube().walk(obj, () => { /* ... */ })
+LavaTube.walk(obj, () => { /* ... */ })
 ```
 
 ### install
@@ -85,7 +92,7 @@ new LavaTube().walk(obj, () => { /* ... */ })
 
 ```javascript
 
-// options object can be passed as second argument to LavaTube constructor optionally:
+// configuration options object:
 const opts = {
     // a function with which the visited keys during walking 
     // process can be customizd for how they appear within 
@@ -102,7 +109,7 @@ const opts = {
     shouldWalk, // [default (target) => true]
 
     // a function that allows you to reveal additional props for a value (if you have more context on its type you might be able to get additional values by calling its methods)
-    defaultGetAdditionalProps, // [default () => []]
+    getAdditionalProps, // [default () => []]
 
     // a boolean indicating if we should search depth first instead of breadth first
     depthFirst, // [default false]
@@ -114,8 +121,3 @@ const opts = {
     realms, // [default [globalThis]]
 };
 ```
-
-### note
-
-A LavaTube instance holds the options to use when walking.
-It does not cache visited nodes so it is safe for re-use.
