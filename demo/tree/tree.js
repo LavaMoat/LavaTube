@@ -1,11 +1,13 @@
+import LavaTube from '../../src/index.js';
+
 function key(prop, val) { // customize aggregation
     const proto = `${({}).toString.call(val)}`;
     return prop;  // "ownerDocument"
     return proto; // "[object HTMLDocument]"
 }
 
-function tree(src, dst, limit) {
-    function cb(val, path) {
+export default function tree(src, dst, limit) {
+    function eachValue(val, path) {
         if (val === dst) {
             let subtree = tree;
             for (let i =  0; i < path.length; i++) {
@@ -18,8 +20,24 @@ function tree(src, dst, limit) {
     }
 
     const tree = {};
-    new LavaTube(cb, {generateKey: key, maxRecursionLimit: limit}).walk(src);
+    LavaTube.walk(src, eachValue, {
+        generateKey: key,
+        maxDepth: limit,
+    });
     return tree;
 }
 
-module.exports = tree;
+function escape(htmlStr) {
+    return htmlStr.replaceAll(/&/g, "&amp;")
+          .replaceAll(/</g, "&lt;")
+          .replaceAll(/>/g, "&gt;")
+          .replaceAll(/"/g, "&quot;")
+          .replaceAll(/'/g, "&#39;");
+ }
+
+export function showResult (treeString) {
+    const display = document.createElement('pre');
+    display.innerHTML = escape(treeString);
+    document.body.appendChild(display)
+    console.log(treeString);
+}

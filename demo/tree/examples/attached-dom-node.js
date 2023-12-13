@@ -1,7 +1,4 @@
-(function(){
-    const tree = require('./tree');
-    setTimeout(() => {
-        const t = tree(document.scripts[1], window, parseInt(limit.value));
-        console.log(treeify.asTree(t));
-    });
-}());
+import tree, { showResult } from '../tree.js';
+
+const t = tree(document.scripts[1], window, parseInt(limit.value));
+showResult(treeify.asTree(t));
