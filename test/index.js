@@ -264,7 +264,7 @@ test('depthFirst - visit ordering', t => {
   }
 })
 
-test('exhaustiveWeakMapSearch', t => {
+test('shouldBruteForceWeakMaps', t => {
   const map = new WeakMap();
   const obj = {};
   const target = {};
@@ -274,7 +274,7 @@ test('exhaustiveWeakMapSearch', t => {
     obj,
   };
   const opts = {
-    exhaustiveWeakMapSearch: true,
+    shouldBruteForceWeakMaps: true,
   }
 
   const shouldBeMissing = LavaTube.find(start, target);
@@ -286,7 +286,7 @@ test('exhaustiveWeakMapSearch', t => {
   ]);
 })
 
-test('exhaustiveWeakMapSearch - non-visitable', t => {
+test('shouldBruteForceWeakMaps - non-visitable', t => {
   const map = new WeakMap();
   const obj = {};
   const nonVistitable = 'abc'
@@ -296,7 +296,7 @@ test('exhaustiveWeakMapSearch - non-visitable', t => {
     obj,
   };
   const opts = {
-    exhaustiveWeakMapSearch: true,
+    shouldBruteForceWeakMaps: true,
   }
 
   const allValues = LavaTube.getAllValues(start, opts);
@@ -305,7 +305,7 @@ test('exhaustiveWeakMapSearch - non-visitable', t => {
 
 // this test ensures we attempt to access WeakMaps as we discover them,
 // using earlier and newly discovered values as keys
-test('exhaustiveWeakMapSearch - nested', t => {
+test('shouldBruteForceWeakMaps - nested', t => {
   const firstWeakMap = new WeakMap()
   let lastWeakMap = firstWeakMap
   const addWeakMap = () => {
@@ -321,7 +321,7 @@ test('exhaustiveWeakMapSearch - nested', t => {
   lastWeakMap.set(firstWeakMap, target);
   const start = firstWeakMap;
   const opts = {
-    exhaustiveWeakMapSearch: true,
+    shouldBruteForceWeakMaps: true,
   }
 
   const shouldBeMissing = LavaTube.find(start, target);
@@ -335,13 +335,13 @@ test('exhaustiveWeakMapSearch - nested', t => {
   ]);
 })
 
-test('exhaustiveWeakMapSearch - depth', t => {
+test('shouldBruteForceWeakMaps - depth', t => {
   const map = new WeakMap();
   const obj = {};
   const target = {};
   map.set(obj, target);
   const opts = {
-    exhaustiveWeakMapSearch: true,
+    shouldBruteForceWeakMaps: true,
     maxDepth: 2,
   }
 
@@ -403,13 +403,13 @@ test('realms - WeakMap value', t => {
 
   {
     const path = LavaTube.find(start, target, {
-      exhaustiveWeakMapSearch: true,
+      shouldBruteForceWeakMaps: true,
     });
     t.deepEqual(path, undefined);
   }
   {
     const path = LavaTube.find(start, target, {
-      exhaustiveWeakMapSearch: true,
+      shouldBruteForceWeakMaps: true,
       realms: [globalThis, vmGlobalThis],
     });
     t.deepEqual(path, ['map', '<WeakMap value (obj)>']);

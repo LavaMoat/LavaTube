@@ -338,7 +338,7 @@ function* iterateAndTrack (subTree, tracker) {
 const makeConfig = ({
     shouldInvokeGetters = true,
     shouldCallFunctions = false,
-    exhaustiveWeakMapSearch = false,
+    shouldBruteForceWeakMaps = false,
     shouldWalk = () => true,
     maxDepth = Infinity,
     depthFirst = false,
@@ -349,7 +349,7 @@ const makeConfig = ({
     return {
         shouldInvokeGetters,
         shouldCallFunctions,
-        exhaustiveWeakMapSearch,
+        shouldBruteForceWeakMaps,
         shouldWalk,
         maxDepth,
         depthFirst,
@@ -370,13 +370,13 @@ function* walkIterativelyEntry (target, opts, visited = new Set(), path = []) {
     yield [target, path];
 
     let tracker;
-    if (config.exhaustiveWeakMapSearch) {
+    if (config.shouldBruteForceWeakMaps) {
         tracker = makeWeakMapTracker(config.generateKey, config.maxDepth, config.realms);
         tracker.visitValue(target, path, depth);
     }
 
     const subTree = walkIteratively(target, config, depth, visited, path);
-    if (config.exhaustiveWeakMapSearch) {
+    if (config.shouldBruteForceWeakMaps) {
         yield* iterateAndTrack(subTree, tracker)
         // check for any values found inside the collected weakMaps
         // as we discover and walk them, new WeakMaps and references may be discovered

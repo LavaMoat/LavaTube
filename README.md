@@ -101,7 +101,7 @@ const opts = {
     shouldCallFunctions, // [default: false]
 
     // we cant iterate WeakMaps on their own, but we can take every value that we find and try it as a key each WeakMap
-    exhaustiveWeakMapSearch, // [default: false]
+    shouldBruteForceWeakMaps, // [default: false]
 
     // a function that allows you to skip walking the provided value
     shouldWalk, // [default: (target) => true]
