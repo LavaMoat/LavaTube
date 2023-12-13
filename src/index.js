@@ -406,12 +406,31 @@ const walkIteratively = function*(target, config, depth, visited, path) {
     }
 }
 
-// public API
+//
+// Public API
+//
 
+/** @typedef {any[]} Path */
+/** @typedef {[any, Path]} IterationResult */
+/** @typedef {Record<{ value: any, path: Path }>} WalkResult */
+
+/**
+ * Iterates over the target object and its nested properties.
+ * @param {any} start - The target value to iterate over.
+ * @param {Object} [opts] - LavaTube configuration options.
+ * @returns {Iterable<IterationResult>} - An iterable that yields [value, path] pairs.
+ */
 export const iterate = (start, opts) => {
     return walkIterativelyEntry(start, opts);
 }
 
+/**
+ * Walks through the target object and its nested properties, invoking a visitor function on each value.
+ * @param {any} start - The target value to walk through.
+ * @param {Function} visitorFn - The visitor function to invoke on each value. Return true to stop iteration and return current value.
+ * @param {Object} [opts] - LavaTube configuration options.
+ * @returns {WalkResult|undefined} - The first value and its path that satisfies the visitor function, or undefined if not found.
+ */
 export const walk = (start, visitorFn, opts) => {
     for (const [value, path] of walkIterativelyEntry(
         start,
@@ -421,8 +440,15 @@ export const walk = (start, visitorFn, opts) => {
             return { value, path };
         }
     }
+    return undefined;
 }
 
+/**
+ * Retrieves all values from the target object and its nested properties.
+ * @param {any} start - The target value to retrieve values from.
+ * @param {Object} [opts] - LavaTube configuration options.
+ * @returns {Array<any>} - An array containing all the values.
+ */
 export const getAllValues = (start, opts) => {
     const results = [];
     walk(start, (value) => {
@@ -431,6 +457,13 @@ export const getAllValues = (start, opts) => {
     return results;
 }
 
+/**
+ * Finds the path to the specified target value in the target object and its nested properties.
+ * @param {any} start - The target value to search in.
+ * @param {any} target - The value to search for.
+ * @param {Object} [opts] - LavaTube configuration options.
+ * @returns {Path|undefined} - The path to the target value, or undefined if not found.
+ */
 export const find = (start, target, opts) => {
     const result = walk(start, (value) => {
         if (value === target) {
