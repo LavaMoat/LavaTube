@@ -488,6 +488,22 @@ test('handle errors - throw on iterator getter', t => {
   t.true(allValues.includes(target));
 })
 
+test('handle errors - throw on iteratable getter', t => {
+  const target = {}
+  const start = {
+    get [Symbol.iterator] () {
+      throw new Error('throw get <Symbol.iterator>')
+    },
+    target,
+  }
+  let allValues;
+  t.notThrows(() => {
+    allValues = LavaTube.getAllValues(start);
+  });
+  t.true(allValues.includes(target));
+})
+
+
 function makeVmRealm () {
   const sandbox = createContext();
   const vmGlobalThis = runInContext('this', sandbox);

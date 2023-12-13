@@ -124,7 +124,10 @@ const getIterableValues = (target, realms) => {
         }
     }
     // handle iterables
-    if (ReflectTryCatch.has(target, Symbol.iterator) && typeof target[Symbol.iterator] === 'function') {
+    if (
+        ReflectTryCatch.has(target, Symbol.iterator) &&
+        typeof ReflectTryCatch.get(target, Symbol.iterator) === 'function'
+    ) {
         // iterable entries
         let index = 0;
         try {
